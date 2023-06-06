@@ -193,7 +193,7 @@ if __name__ == '__main__':
             out_file2 = os.path.join(save_img_path, "d" + img_name)
             cv2.imwrite(out_file2, vis_img)
             log_file = os.path.join(save_img_path, "log.csv")
-            f = open(log_file, 'a')
+            f = open(log_file, 'a') # 记录图像的特征点和匹配数量
             writer = csv.writer(f)
             writer.writerow([img_name, len(kpts), len(matches)])
 
@@ -212,7 +212,7 @@ if __name__ == '__main__':
     avg_net_FPS = np.mean(sum_net_t[1:len(sum_net_t)-1])
     avg_net_matches_FPS = np.mean(sum_net_matches_t[1:len(sum_net_matches_t)-1])
     avg_total_FPS = np.mean(sum_total_t[1:len(sum_total_t)-1])
-    if args.write_dir:
+    if args.write_dir: # 记录图像的平均帧率
         writer.writerow([f'avg_net_FPS:{avg_net_FPS:.3f},avg_net+matches_FPS:{avg_net_matches_FPS:.3f},avg_total_FPS:{avg_total_FPS:.3f}'])
     print(
         f'avg_FPS：\n avg_net_FPS:{avg_net_FPS:.3f},avg_net+matches_FPS:{avg_net_matches_FPS:.3f},avg_total_FPS:{avg_total_FPS:.3f}')
