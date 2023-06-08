@@ -141,30 +141,29 @@ if __name__ == '__main__':
     sum_net_t = []
     sum_net_matches_t = []
     sum_total_t = []  # 初始化时间列表
-    for i in range(1000, len(image_loader)):
+    for i in range(1000,len(image_loader)):
         start = time.time()
         img,img_name = image_loader[i]
         img2,img2_name = image_loader2[i]
         if img is None or img2 is None:
             break
-        img_rgb2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img_rgb2 = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
         start1 = time.time()
-        pred_ref = model(img_rgb2)
         pred = model(img_rgb)
+        pred_ref = model(img_rgb2)
         end1 = time.time()
-        kpts_ref = pred_ref['keypoints']
-        desc_ref = pred_ref['descriptors']
-
         kpts = pred['keypoints']
         desc = pred['descriptors']
+        kpts_ref = pred_ref['keypoints']
+        desc_ref = pred_ref['descriptors']
         try:
-            matches = mnn_mather(desc_ref, desc)
+            matches = mnn_mather(desc,desc_ref)
         except:
             continue
         end2 = time.time()
         status = f"matches/keypoints: {len(matches)}/{len(kpts)}"
-        vis_img,points_out = plot_matches(img2, img, kpts_ref, kpts, matches)
+        vis_img,points_out = plot_matches(img, img2, kpts,kpts_ref, matches)
         cv2.namedWindow(args.model)
         cv2.setWindowTitle(args.model, args.model + ': ' + status)
         cv2.putText(vis_img, "Press 'q' or 'ESC' to stop.", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2,
@@ -206,8 +205,8 @@ if __name__ == '__main__':
         if c == ord('q') or c == 27:
             break
 
-        # if i < 3000:
-        #     continue
+        # if i == 1100 or i ==110:
+        #     break
     # 计算平均帧率
     avg_net_FPS = np.mean(sum_net_t[1:len(sum_net_t)-1])
     avg_net_matches_FPS = np.mean(sum_net_matches_t[1:len(sum_net_matches_t)-1])
