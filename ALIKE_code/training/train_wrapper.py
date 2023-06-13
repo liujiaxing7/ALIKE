@@ -9,14 +9,14 @@ from pathlib import Path
 
 import torch
 
-from nets.alike import ALIKE
-from nets.losses import *
+from ALIKE_code.nets.alike import ALIKE
+from ALIKE_code.nets.losses import *
 
-from training.scheduler import WarmupConstantSchedule
-from utils import keypoints_normal2pixel, mutual_argmin, \
+from ALIKE_code.training.scheduler import WarmupConstantSchedule
+from ALIKE_code.utils import keypoints_normal2pixel, mutual_argmin, \
     mutual_argmax, plot_keypoints, plot_matches, EmptyTensorError, \
     warp, compute_keypoints_distance
-from training.val_hpatches_utils import load_precompute_errors, draw_MMA
+from ALIKE_code.training.val_hpatches_utils import load_precompute_errors, draw_MMA
 
 
 class TrainWrapper(ALIKE):

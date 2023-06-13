@@ -132,7 +132,8 @@ class HPatchesSquenceDataset(data.Dataset):
 if __name__ == '__main__':
     from tqdm import tqdm
 
-    hpatches_dataset = HPatchesSquenceDataset(root='../data/hpatches', alteration='i')
+    # hpatches_dataset = HPatchesSquenceDataset(root='../data/hpatches', alteration='i')
+    hpatches_dataset = HPatchesSquenceDataset(root='/media/xin/data1/data/hpatches_sequences/hpatches-sequences-release', alteration='i')
     max_shapes = []
     for data in tqdm(hpatches_dataset):
         plt.imshow(data['image'].transpose(1, 2, 0))

@@ -28,6 +28,7 @@ class MegaDepthDataset(Dataset):
             colorjit=True,
             gray=False,
             crop_or_scale='scale',  # crop, scale, crop_scale
+            img_type='jpg'
     ):
         self.data_path = Path(root)
         self.train = train
@@ -37,6 +38,7 @@ class MegaDepthDataset(Dataset):
         self.image_size = image_size
         self.gray = gray
         self.crop_or_scale = crop_or_scale
+        self.img_type = img_type
 
         self.dataset = []
 
@@ -68,6 +70,14 @@ class MegaDepthDataset(Dataset):
 
             with open(json_path, 'r') as load_f:
                 datasets = json.load(load_f)
+                if self.train:
+                    datasets_dict = {}
+                    train_dir = ['0001','0004','0005','0007']
+                    for dir in train_dir:
+                        datasets_dict[dir] = datasets[dir]
+                    datasets = datasets_dict
+
+
 
             if init:
                 self.dataset = [0] * (self.pairs_per_scene * len(datasets.items()))
@@ -87,11 +97,11 @@ class MegaDepthDataset(Dataset):
                     scene_indices = scene_data['tuples']
 
                 def getpath(image_name):
-                    if image_name.endswith('jpg'):
+                    if image_name.endswith(self.img_type):
                         base_name = image_name.split('.')[0]
                     else:
                         base_name = copy.deepcopy(image_name)
-                        image_name = base_name + '.jpg'
+                        image_name = base_name + '.' + self.img_type
 
                     imagepath = image_path / image_name
                     depthpath = depth_path / (base_name + '.h5')
@@ -145,7 +155,7 @@ class MegaDepthDataset(Dataset):
         depth_path1 = self.data_path / pair_metadata['depth_path1']
         with h5py.File(depth_path1, 'r') as hdf5_file:
             depth1 = np.array(hdf5_file['/depth'])
-        assert (np.min(depth1) >= 0)
+        # assert (np.min(depth1) >= 0)
         image_path1 = self.data_path / pair_metadata['image_path1']
         image1 = Image.open(image_path1)
         if image1.mode != 'RGB':
@@ -158,7 +168,7 @@ class MegaDepthDataset(Dataset):
         depth_path2 = self.data_path / pair_metadata['depth_path2']
         with h5py.File(depth_path2, 'r') as hdf5_file:
             depth2 = np.array(hdf5_file['/depth'])
-        assert (np.min(depth2) >= 0)
+        # assert (np.min(depth2) >= 0)
         image_path2 = self.data_path / pair_metadata['image_path2']
         image2 = Image.open(image_path2)
         if image2.mode != 'RGB':
@@ -176,8 +186,8 @@ class MegaDepthDataset(Dataset):
                 # ================================================= compute central_match
                 DOWNSAMPLE = 10
                 # resize to speed up
-                depth1s = cv2.resize(depth1, (depth1.shape[1] // DOWNSAMPLE, depth1.shape[0] // DOWNSAMPLE))
-                depth2s = cv2.resize(depth2, (depth2.shape[1] // DOWNSAMPLE, depth2.shape[0] // DOWNSAMPLE))
+                depth1s = cv2.resize(depth1.astype("float"), (depth1.shape[1] // DOWNSAMPLE, depth1.shape[0] // DOWNSAMPLE))
+                depth2s = cv2.resize(depth2.astype("float"), (depth2.shape[1] // DOWNSAMPLE, depth2.shape[0] // DOWNSAMPLE))
                 intrinsic1s = scale_intrinsics(intrinsics1, (DOWNSAMPLE, DOWNSAMPLE))
                 intrinsic2s = scale_intrinsics(intrinsics2, (DOWNSAMPLE, DOWNSAMPLE))
 
@@ -254,7 +264,7 @@ class MegaDepthDataset(Dataset):
     def scale(self, image, depth, intrinsic):
         img_size_org = image.shape
         image = cv2.resize(image, (self.image_size, self.image_size))
-        depth = cv2.resize(depth, (self.image_size, self.image_size))
+        depth = cv2.resize(depth.astype("float32"), (self.image_size, self.image_size))
         intrinsic = scale_intrinsics(intrinsic, (img_size_org[1] / self.image_size, img_size_org[0] / self.image_size))
         return image, depth, intrinsic
 
@@ -375,14 +385,18 @@ if __name__ == '__main__':
 
 
     dataset = MegaDepthDataset(  # root='../data/megadepth',
-        root='../data/imw2020val',
-        train=False,
+        # root='../data/imw2020val',
+        # root='/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/imw2020-val',
+        root='/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/megadepth',
+        # root='/media/xin/work1/github_pro/disk/dataset_test/dense/dataset',
+        train=True,
         using_cache=True,
-        pairs_per_scene=100,
+        pairs_per_scene=8,  # 随机采集的数据
         image_size=256,
         colorjit=True,
         gray=False,
         crop_or_scale='scale',
+        img_type='jpg'
     )
     dataset.build_dataset()
 

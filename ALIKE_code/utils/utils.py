@@ -5,7 +5,7 @@ from numba import jit
 from copy import deepcopy
 
 try:
-    from utils.project_depth_nn_cython_pkg import project_depth_nn_cython
+    from ALIKE_code.utils.project_depth_nn_cython import project_depth_nn_cython
 
     nn_cython = True
 except:

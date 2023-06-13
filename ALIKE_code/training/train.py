@@ -14,11 +14,11 @@ from torch.utils.data import DataLoader
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
-from datasets.hpatches import HPatchesDataset
-from datasets.megadepth import MegaDepthDataset
-from datasets.cat_datasets import ConcatDatasets
-from training.train_wrapper import TrainWrapper
-from training.scheduler import WarmupConstantSchedule
+from ALIKE_code.datasets.hpatches import HPatchesDataset
+from ALIKE_code.datasets.megadepth import MegaDepthDataset
+from ALIKE_code.datasets.cat_datasets import ConcatDatasets
+from ALIKE_code.training.train_wrapper import TrainWrapper
+from ALIKE_code.training.scheduler import WarmupConstantSchedule
 
 from pytorch_lightning.callbacks.base import Callback
 
@@ -104,17 +104,18 @@ if __name__ == '__main__':
     temp_ds = 0.1
 
     # ================================== training parameters
-    gpus = [0,1]
+    gpus = [0]
     warmup_steps = 500
     t_total = 10000
     image_size = 480
     log_freq_img = 2000
 
     # ================================== dataset dir and log dir
-    hpatch_dir = '../data/hpatches'
-    mega_dir = '../data/megadepth'
+    hpatch_dir = '/media/xin/data1/data/hpatches_sequences/hpatches-sequences-release'
+    mega_dir = '/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/megadepth'
+    # mega_dir = '/media/xin/work1/github_pro/disk/dataset_test/dense/dataset'
     # mega_dir = '/mnt/data3/datasets/megadepth_disk'
-    imw2020val_dir = '../data/imw2020val'
+    imw2020val_dir = '/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/imw2020-val'
     log_dir = 'log_' + Path(__file__).stem
 
     batch_size = 1
@@ -177,9 +178,9 @@ if __name__ == '__main__':
 
     # ========================================= datasets & dataloaders
     # ========== training dataset
-    mega_dataset1 = MegaDepthDataset(root=mega_dir, train=True, using_cache=debug, pairs_per_scene=100,
+    mega_dataset1 = MegaDepthDataset(root=mega_dir, train=True, using_cache=debug, pairs_per_scene=8,
                                      image_size=image_size, gray=False, colorjit=True, crop_or_scale='crop')
-    mega_dataset2 = MegaDepthDataset(root=mega_dir, train=True, using_cache=debug, pairs_per_scene=100,
+    mega_dataset2 = MegaDepthDataset(root=mega_dir, train=True, using_cache=debug, pairs_per_scene=8,
                                      image_size=image_size, gray=False, colorjit=True, crop_or_scale='scale')
 
     # mega_dataset1 = MegaDepthDataset(root=mega_dir, train=True, using_cache=True, pairs_per_scene=100,
@@ -229,5 +230,5 @@ if __name__ == '__main__':
                          ]
                          )
 
-    trainer.fit(model, train_dataloader=train_loader,
+    trainer.fit(model, train_dataloaders=train_loader,
                 val_dataloaders=[hpatch_i_dataloader, hpatch_v_dataloader, imw2020val_dataloader])

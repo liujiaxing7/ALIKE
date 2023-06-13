@@ -5,8 +5,8 @@ import logging
 from copy import deepcopy
 from torchvision.transforms import ToTensor
 
-from nets.alnet import ALNet
-from nets.soft_detect import SoftDetect
+from ALIKE_code.nets.alnet import ALNet
+from ALIKE_code.nets.soft_detect import SoftDetect
 import time
 
 
