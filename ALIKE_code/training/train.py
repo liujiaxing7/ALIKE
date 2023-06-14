@@ -1,3 +1,4 @@
+import argparse
 import os
 import sys
 import time
@@ -5,7 +6,9 @@ import logging
 import functools
 from pathlib import Path
 
-sys.path.append('../')
+import yaml
+
+sys.path.append('/work/data/zxw/project/ALIKE/') # 添加模型训练根目录
 
 import torch
 import pytorch_lightning as pl
@@ -34,201 +37,118 @@ class RebuildDatasetCallback(Callback):
 
 
 if __name__ == '__main__':
+
     logging.basicConfig(level=logging.INFO)
     torch.autograd.set_detect_anomaly(True)
-    # pretrained_model = '/mnt/data/zxm/document/ALIKE/training/log_train/train/Version-0702-195918/checkpoints/last.ckpt'
-    pretrained_model = None
 
-    debug = False
-    # debug = True
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config")
 
-    model_size = 'normal'
-    # model_size = 'tiny'
-    # model_size = 'small'
-    # model_size = 'big'
-    # pe = True
-    pe = False
+    args = parser.parse_args()
 
-    agg_mode = 'cat'
-    # agg_mode = 'sum'
-    # agg_mode = 'fpn'
-    # ========================================= configs
-    if model_size == 'small':
-        c1 = 8
-        c2 = 16
-        c3 = 48
-        c4 = 96
-        dim = 96
-        single_head = True
-    elif model_size == 'big':
-        c1 = 32
-        c2 = 64
-        c3 = 128
-        c4 = 128
-        dim = 128
-        single_head = False
-    elif model_size == 'tiny':
-        c1 = 8
-        c2 = 16
-        c3 = 32
-        c4 = 64
-        dim = 64
-        single_head = True
-    else:
-        c1 = 16
-        c2 = 32
-        c3 = 64
-        c4 = 128
-        dim = 128
-        single_head = True
+    config_file = args.config
+    assert (os.path.exists(config_file))
+    # 读取配置文件
+    with open(config_file, 'r') as fin:
+        config = yaml.safe_load(fin)
 
-    # ================================== detect parameters
-    radius = 2
-    top_k = 400
-    scores_th_eval = 0.2
-    n_limit_eval = 5000
-
-    # ================================== gt reprojection th
-    train_gt_th = 5
-    eval_gt_th = 3
-
-    # ================================== loss weight
-    w_pk = 0.5
-    w_rp = 1
-    w_sp = 1
-    w_ds = 5
-    w_triplet = 0
-    sc_th = 0.1
-    norm = 1
-    temp_sp = 0.1
-    temp_ds = 0.1
-
-    # ================================== training parameters
-    gpus = [0]
-    warmup_steps = 500
-    t_total = 10000
-    image_size = 480
-    log_freq_img = 2000
-
-    # ================================== dataset dir and log dir
-    hpatch_dir = '/media/xin/data1/data/hpatches_sequences/hpatches-sequences-release'
-    mega_dir = '/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/megadepth'
-    # mega_dir = '/media/xin/work1/github_pro/disk/dataset_test/dense/dataset'
-    # mega_dir = '/mnt/data3/datasets/megadepth_disk'
-    imw2020val_dir = '/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/imw2020-val'
+    debug = config['data']['data_set']['debug']
+    num_workers = config['data']['data_set']['num_workers']
     log_dir = 'log_' + Path(__file__).stem
 
-    batch_size = 1
-    if debug:
-        accumulate_grad_batches = 1
-        num_workers = 0
-        num_sanity_val_steps = 0
-        # pretrained_model = 'log_train/train/Version-0701-231352/checkpoints/last.ckpt'
-        pretrained_model = 'log_train/train/Version-0708-174505/checkpoints/last.ckpt'
-    else:
-        accumulate_grad_batches = 16
-        num_workers = 8
-        num_sanity_val_steps = 1
+    # 加载日志文件
+    log_name = 'debug' if debug else 'train'
+    # version = time.strftime("Version-%m%d-%H%M%S", time.localtime())
+    version = config['solver']['version']
+    os.makedirs(log_dir, exist_ok=True)
+    logger = TensorBoardLogger(save_dir=log_dir, name=log_name, version=version, default_hp_metric=False)
+    logging.info(f'>>>>>>>>>>>>>>>>> log dir: {logger.log_dir}')
+    # 训练集
+    mega_dataset = [MegaDepthDataset(root=config['data']['image_train_path'], train=True, using_cache=debug, pairs_per_scene=config['data']['data_set']['pairs_per_scene'],
+                                     image_size=config['data']['image_size'][0], gray=False, colorjit=True, crop_or_scale=t,img_type=config['data']['image_type']) for t in ['crop','scale']]
+    train_datasets = ConcatDatasets(*mega_dataset)
+    train_loader = DataLoader(train_datasets, batch_size=config['solver']['batch_size'], shuffle=True, pin_memory=not debug,
+                              num_workers=num_workers)
 
-    # ========================================= model
-    lr_scheduler = functools.partial(WarmupConstantSchedule, warmup_steps=warmup_steps)
-
+    # 验证集
+    val_dataloaders = []
+    hpatch_imw_path = config['data']['image_val_path'].get('hpatch_imw_path')
+    other_path = config['data']['image_val_path'].get('other_path')
+    if hpatch_imw_path:
+        for alter in ['i','v']:
+            hpatch_dataset = HPatchesDataset(root=hpatch_imw_path[0], alteration=alter)
+            hpatch_dataloader = DataLoader(hpatch_dataset, batch_size=config['solver']['batch_size'], pin_memory=not debug, num_workers=num_workers)
+            val_dataloaders.append(hpatch_dataloader)
+        imw2020val = MegaDepthDataset(root=hpatch_imw_path[1], train=False, using_cache=True, colorjit=False,gray=False)
+        imw2020val_dataloader = DataLoader(imw2020val, batch_size=config['solver']['batch_size'], pin_memory=not debug, num_workers=num_workers)
+        val_dataloaders.append(imw2020val_dataloader)
+    elif other_path:
+        for val_path in other_path:
+            dataset = MegaDepthDataset(root=val_path, train=False, using_cache=True, colorjit=False, gray=False)
+            dataloaders = DataLoader(val_path, batch_size=config['solver']['batch_size'], pin_memory=not debug, num_workers=num_workers)
+            val_dataloaders.append(dataloaders)
+    # 加载模型
+    pretrained_model = config['model']['pretrained_model']
+    lr_scheduler = functools.partial(WarmupConstantSchedule, warmup_steps=config['model']['training parameters']['warmup_steps'])
     model = TrainWrapper(
         # ================================== feature encoder
-        c1=c1, c2=c2, c3=c3, c4=c4, dim=dim,
-        agg_mode=agg_mode,  # sum, cat, fpn
-        single_head=single_head,
-        pe=pe,
+        *config['model']['c1_4_dim_single_head'],
+        agg_mode=config['model']['agg_mode'],  # sum, cat, fpn
+        single_head=config['model']['single_head'],
+        pe=config['model']['pe'],
         # ================================== detect parameters
-        radius=radius,
-        top_k=top_k, scores_th=0, n_limit=0,
-        scores_th_eval=scores_th_eval, n_limit_eval=n_limit_eval,
+        radius=config['model']['detect_parameters']['radius'],top_k=config['model']['detect_parameters']['top_k'], scores_th=0, n_limit=0,
+        scores_th_eval=config['model']['detect_parameters']['scores_th_eval'], n_limit_eval=config['model']['detect_parameters']['n_limit_eval'],
         # ================================== gt reprojection th
-        train_gt_th=train_gt_th, eval_gt_th=eval_gt_th,
+        train_gt_th=config['model']['gt_reprojection_th']['train_gt_th'], eval_gt_th=config['model']['gt_reprojection_th']['eval_gt_th'],
         # ================================== loss weight
-        w_pk=w_pk,  # weight of peaky loss
-        w_rp=w_rp,  # weight of reprojection loss
-        w_sp=w_sp,  # weight of score map rep loss
-        w_ds=w_ds,  # weight of descriptor loss
-        w_triplet=w_triplet,
-        sc_th=sc_th,  # score threshold in peaky and  reprojection loss
-        norm=norm,  # distance norm
-        temp_sp=temp_sp,  # temperature in ScoreMapRepLoss
-        temp_ds=temp_ds,  # temperature in DescReprojectionLoss
+        w_pk=config['model']['loss_weight']['w_pk'],  # weight of peaky loss
+        w_rp=config['model']['loss_weight']['w_rp'],  # weight of reprojection loss
+        w_sp=config['model']['loss_weight']['w_sp'],  # weight of score map rep loss
+        w_ds=config['model']['loss_weight']['w_ds'],  # weight of descriptor loss
+        w_triplet=config['model']['loss_weight']['w_triplet'],
+        sc_th=config['model']['loss_weight']['sc_th'],  # score threshold in peaky and  reprojection loss
+        norm=config['model']['loss_weight']['norm'],  # distance norm
+        temp_sp=config['model']['loss_weight']['temp_sp'],  # temperature in ScoreMapRepLoss
+        temp_ds=config['model']['loss_weight']['temp_ds'],  # temperature in DescReprojectionLoss
         # ================================== learning rate
-        lr=3e-4,
-        log_freq_img=log_freq_img,
+        lr=float(config['solver']['lr']),
+        log_freq_img=config['model']['training parameters']['log_freq_img'],
         # ================================== pretrained_model
         pretrained_model=pretrained_model,
         lr_scheduler=lr_scheduler,
         debug=debug
     )
 
-    # ========================================= dataloaders
-    if debug:
-        reload_dataloaders_every_epoch = False
-        limit_train_batches = 1
-        limit_val_batches = 1.
-        max_epochs = 100
-    else:
-        reload_dataloaders_every_epoch = True
-        limit_train_batches = 5000 // batch_size
-        limit_val_batches = 1.
-        max_epochs = 200
-
-    # ========================================= datasets & dataloaders
-    # ========== training dataset
-    mega_dataset1 = MegaDepthDataset(root=mega_dir, train=True, using_cache=debug, pairs_per_scene=8,
-                                     image_size=image_size, gray=False, colorjit=True, crop_or_scale='crop')
-    mega_dataset2 = MegaDepthDataset(root=mega_dir, train=True, using_cache=debug, pairs_per_scene=8,
-                                     image_size=image_size, gray=False, colorjit=True, crop_or_scale='scale')
-
-    # mega_dataset1 = MegaDepthDataset(root=mega_dir, train=True, using_cache=True, pairs_per_scene=100,
-    #                                  image_size=image_size, gray=False, colorjit=True, crop_or_scale='crop')
-    # mega_dataset2 = MegaDepthDataset(root=mega_dir, train=True, using_cache=True, pairs_per_scene=100,
-    #                                  image_size=image_size, gray=False, colorjit=True, crop_or_scale='scale')
-    train_datasets = ConcatDatasets(mega_dataset1, mega_dataset2)
-    train_loader = DataLoader(train_datasets, batch_size=batch_size, shuffle=True, pin_memory=not debug,
-                              num_workers=num_workers)
-    # ========== evaluation dataset
-    hpatch_i_dataset = HPatchesDataset(root=hpatch_dir, alteration='i')
-    hpatch_v_dataset = HPatchesDataset(root=hpatch_dir, alteration='v')
-    hpatch_i_dataloader = DataLoader(hpatch_i_dataset, batch_size=1, pin_memory=not debug, num_workers=num_workers)
-    hpatch_v_dataloader = DataLoader(hpatch_v_dataset, batch_size=1, pin_memory=not debug, num_workers=num_workers)
-
-    imw2020val = MegaDepthDataset(root=imw2020val_dir, train=False, using_cache=True, colorjit=False, gray=False)
-    imw2020val_dataloader = DataLoader(imw2020val, batch_size=1, pin_memory=not debug, num_workers=num_workers)
-
-    # ========================================= logger
-    log_name = 'debug' if debug else 'train'
-    version = time.strftime("Version-%m%d-%H%M%S", time.localtime())
-
-    os.makedirs(log_dir, exist_ok=True)
-    logger = TensorBoardLogger(save_dir=log_dir, name=log_name, version=version, default_hp_metric=False)
-    logging.info(f'>>>>>>>>>>>>>>>>> log dir: {logger.log_dir}')
-
-    # ========================================= trainer
-    trainer = pl.Trainer(gpus=gpus,
+    # 模型训练
+    trainer = pl.Trainer(gpus=config['model']['training parameters']['gpus'],
                          # resume_from_checkpoint='/mnt/data/zxm/document/ALIKE/training/log_train/train/Version-0715-191154/checkpoints/last.ckpt',
                          # resume_from_checkpoint='/mnt/data/zxm/document/ALIKE/training/log_train/train/Version-0702-195918/checkpoints/last.ckpt',
                          fast_dev_run=False,
-                         accumulate_grad_batches=accumulate_grad_batches,
-                         num_sanity_val_steps=num_sanity_val_steps,
-                         limit_train_batches=limit_train_batches,
-                         limit_val_batches=limit_val_batches,
-                         max_epochs=max_epochs,
-                         logger=logger,
-                         reload_dataloaders_every_epoch=reload_dataloaders_every_epoch,
+                         accumulate_grad_batches=config['data']['data_set']['accumulate_grad_batches'], # 多少批进行一次梯度累积
+                         num_sanity_val_steps=config['data']['data_set']['num_sanity_val_steps'], # 训练前检查多少批验证数据
+                         limit_train_batches= config['solver']['limit_train_batches'] // config['solver']['batch_size'], # 训练数据集 如果是小数则表示百分比
+                         limit_val_batches=config['solver']['limit_val_batches'], # 验证数据集
+                         max_epochs=config['solver']['max_epochs'], # 最多训练轮数
+                         logger=logger, # 日志
+                         reload_dataloaders_every_epoch=config['solver']['reload_dataloaders_every_epoch'], # 每一轮是否重新载入数据
                          callbacks=[
-                             ModelCheckpoint(monitor='val_metrics/mean', save_top_k=3,
-                                             mode='max', save_last=True,
+                             ModelCheckpoint(monitor='val_metrics/mean',
+                                             save_top_k=8, # 保存前n个最好的模型
+                                             mode='max',
+                                             save_last=True,
                                              dirpath=logger.log_dir + '/checkpoints',
                                              auto_insert_metric_name=False,
-                                             filename='epoch={epoch}-mean_metric={val_metrics/mean:.4f}'),
+                                             filename='epoch={epoch}-mean_metric={val_metrics/mean:.4f}',
+                                             ),
                              LearningRateMonitor(logging_interval='step'),
                              RebuildDatasetCallback()
                          ]
                          )
 
     trainer.fit(model, train_dataloaders=train_loader,
-                val_dataloaders=[hpatch_i_dataloader, hpatch_v_dataloader, imw2020val_dataloader])
+                val_dataloaders=val_dataloaders)
+
+
+
+

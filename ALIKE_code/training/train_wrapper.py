@@ -134,7 +134,7 @@ class TrainWrapper(ALIKE):
         wh = pred0['scores_map'][0].new_tensor([[w - 1, h - 1]])
 
         if self.debug:
-            from utils import display_image_in_actual_size
+            from ALIKE_code.utils import display_image_in_actual_size
             image0 = batch['image0'][0].permute(1, 2, 0).cpu().numpy()
             image1 = batch['image1'][0].permute(1, 2, 0).cpu().numpy()
             display_image_in_actual_size(image0)
@@ -270,7 +270,7 @@ class TrainWrapper(ALIKE):
                 continue
 
             if self.debug:
-                from utils import display_image_in_actual_size
+                from ALIKE_code.utils import display_image_in_actual_size
                 image0 = batch['image0'][0].permute(1, 2, 0).cpu().numpy()
                 image1 = batch['image1'][0].permute(1, 2, 0).cpu().numpy()
 

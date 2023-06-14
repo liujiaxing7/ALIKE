@@ -523,7 +523,7 @@ def display_image_in_actual_size(image):
     fig = plt.figure(figsize=figsize)
     ax = fig.add_axes([0, 0, 1, 1])
 
-    # Hide spines, ticks, etc.
+    # Hide spines, ticks, config.
     ax.axis('off')
 
     # Display the image.
