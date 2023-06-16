@@ -10,7 +10,7 @@ import numpy as np
 from alike import ALike, configs
 from copy import deepcopy
 from decimal import Decimal
-
+from ALIKE_code.model_transfor.ckpt2pth import main
 
 class ImageLoader(object):
     def __init__(self, filepath: str):
@@ -109,7 +109,7 @@ if __name__ == '__main__':
                         help='Image directory.')
     parser.add_argument('--model', choices=['alike-t', 'alike-s', 'alike-n', 'alike-l'], default="alike-n",
                         help="The model configuration")
-    parser.add_argument('--model_path', default="",help="The model configuration")
+    parser.add_argument('--model_path', default="default",help="The model path, The default is open source model")
     parser.add_argument('--device', type=str, default='cuda', help="Running device (default: cuda).")
     parser.add_argument('--top_k', type=int, default=-1,
                         help='Detect top K keypoints. -1 for threshold based mode, >0 for top K mode. (default: -1)')
@@ -124,12 +124,34 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
     image_loader = ImageLoader(args.input)
+    # 模型路径配置
+    model_path_default = {
+        'alike-t': os.path.join(os.path.split(__file__)[0], 'models', 'alike-t.pth'),
+        'alike-s': os.path.join(os.path.split(__file__)[0], 'models', 'alike-s.pth'),
+        'alike-n': os.path.join(os.path.split(__file__)[0], 'models', 'alike-n.pth'),
+        'alike-l': os.path.join(os.path.split(__file__)[0], 'models', 'alike-l.pth')
+    }
+
+    default_model = True
+    model_path = args.model_path
+    output_model_path = os.path.join('/media/xin/work1/github_pro/ALIKE/test_model_save',f"{os.path.basename(model_path).split('.')[0]}.pth")
+
+    if model_path.endswith('.ckpt'): # 如果是ckpt，则转换
+        main(model_path,output_model_path,args.device)
+        model_path = output_model_path
+        print("模型转换成功!")
+        default_model = False
+    elif model_path == 'default': # 如果是默认，则自动加载开源模型
+        model_path = model_path_default[args.model]
+
     model = ALike(**configs[args.model],
-                  model_path=args.model_path,
+                  model_path=model_path,
                   device=args.device,
                   top_k=args.top_k,
                   scores_th=args.scores_th,
-                  n_limit=args.n_limit)
+                  n_limit=args.n_limit,
+                  default_model=default_model
+                  )
 
     logging.info("Press 'space' to start. \nPress 'q' or 'ESC' to stop!")
 
@@ -219,7 +241,6 @@ if __name__ == '__main__':
         f'avg_FPS：\n avg_net_FPS:{avg_net_FPS:.3f},avg_net+matches_FPS:{avg_net_matches_FPS:.3f},avg_total_FPS:{avg_total_FPS:.3f}')
     logging.info('Finished!')
     logging.info('Press any key to exit!')
-    cv2.putText(vis_img, "Finished! Press any key to exit.", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2,
-                cv2.LINE_AA)
+    cv2.putText(vis_img, "Finished! Press any key to exit.", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2,cv2.LINE_AA)
     cv2.imshow(args.model, vis_img)
     cv2.waitKey()

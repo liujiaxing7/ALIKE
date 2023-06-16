@@ -56,8 +56,6 @@ class MegaDepthDataset(Dataset):
         self.dataset = []
         if not self.train:
             np_random_state = np.random.get_state()
-            np.random.seed(0)
-
         logging.info('Building dataset...')
 
         json_path = self.data_path / 'dataset.json'
@@ -67,17 +65,15 @@ class MegaDepthDataset(Dataset):
             logging.info(f'Loading cached meta data: {cache_file}')
             self.dataset = torch.load(cache_file)
         else:
-
             with open(json_path, 'r') as load_f:
                 datasets = json.load(load_f)
                 if self.train:
                     datasets_dict = {}
-                    train_dir = ['0001','0004','0005','0007']
-                    for dir in train_dir:
-                        datasets_dict[dir] = datasets[dir]
+                    train_dir = self.data_path / 'scenes'
+                    for dir in os.listdir(train_dir):
+                        if os.path.isdir(os.path.join(train_dir, dir)):
+                            datasets_dict[dir] = datasets[dir]
                     datasets = datasets_dict
-
-
 
             if init:
                 self.dataset = [0] * (self.pairs_per_scene * len(datasets.items()))

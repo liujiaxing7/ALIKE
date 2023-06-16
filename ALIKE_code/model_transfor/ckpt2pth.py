@@ -27,7 +27,8 @@ def get_model(checkpoint_path,device):
 
 
 
-def main(image_path,checkpoint_path,device):
+def main(checkpoint_path,OUTPUT_MODEL,device):
+    image_path = "/media/xin/work1/github_pro/ALIKE/ALIKE_code/model_transfor/img/1.png"
     # 加载图片
     image = Image.open(image_path)
     if image.mode != 'RGB':
@@ -48,10 +49,10 @@ def main(image_path,checkpoint_path,device):
     # 保存pth模型
     torch.jit.save(script_model, OUTPUT_MODEL)
     # 加载转换后的模型
-    script_model = torch.jit.load(OUTPUT_MODEL)
-
-    # test on same size images
-    test_on_image_pair(model, script_model, image)
+    # script_model = torch.jit.load(OUTPUT_MODEL)
+    #
+    # # test on same size images
+    # test_on_image_pair(model, script_model, image)
 
 
     print(f'torch script model "{OUTPUT_MODEL}" created and tested')
@@ -59,9 +60,7 @@ def main(image_path,checkpoint_path,device):
 
 
 if __name__ == "__main__":
-    IMAGE_0_PATH = "./img/1.png"
-    # IMAGE_1_PATH = "./img/2.png"
     ckpt_path = '/media/xin/work1/github_pro/ALIKE/ALIKE_code/training/log_train/train/R4.0.1/normal_checkpoints/epoch=0-mean_metric=0.0733.ckpt'
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    OUTPUT_MODEL = "script_model.pth"
-    main(IMAGE_0_PATH,ckpt_path,device)
+    output_model = "script_model.pth"
+    main(ckpt_path,output_model,device)

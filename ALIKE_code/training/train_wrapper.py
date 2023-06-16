@@ -423,6 +423,7 @@ class TrainWrapper(ALIKE):
         for k, v in loss_package.items():
             if 'loss' in k:
                 self.log('train/' + k, v)
+                print('train/' + k, v)
 
         pred = {'scores_map0': pred0['scores_map'],
                 'scores_map1': pred1['scores_map'],
@@ -567,10 +568,10 @@ class TrainWrapper(ALIKE):
 
     def on_validation_epoch_end(self):
         # ============= compute average
-        num_feat_mean = np.mean(np.array(self.num_feat))
-        repeatability_mean = np.mean(np.array(self.repeatability))
-        accuracy_mean = np.mean(np.array(self.accuracy))
-        matching_score_mean = np.mean(np.array(self.matching_score))
+        num_feat_mean = np.mean(np.array(self.num_feat)).item()
+        repeatability_mean = np.mean(np.array(self.repeatability)).item()
+        accuracy_mean = np.mean(np.array(self.accuracy)).item()
+        matching_score_mean = np.mean(np.array(self.matching_score)).item()
 
         self.log('val_kpt_num_mean', num_feat_mean)
         self.log('val_repeatability_mean', repeatability_mean)

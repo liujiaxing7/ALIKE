@@ -58,10 +58,10 @@ if __name__ == '__main__':
 
     # 加载日志文件
     log_name = 'debug' if debug else 'train'
-    # version = time.strftime("Version-%m%d-%H%M%S", time.localtime())
+    v_time = time.strftime("V%m%d-%H%M%S", time.localtime())
     version = config['solver']['version']
     os.makedirs(log_dir, exist_ok=True)
-    logger = TensorBoardLogger(save_dir=log_dir, name=log_name, version=version, default_hp_metric=False, sub_dir='loss_tensor')
+    logger = TensorBoardLogger(save_dir=log_dir, name=log_name, version=version, default_hp_metric=False, sub_dir=f'loss_tensor/{v_time}')
     logging.info(f'>>>>>>>>>>>>>>>>> log dir: {logger.log_dir}')
     # 训练集
     mega_dataset = [MegaDepthDataset(root=config['data']['image_train_path'], train=True, using_cache=debug, pairs_per_scene=config['data']['data_set']['pairs_per_scene'],
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     )
     # 断点续训
     model_name = config['model']['name']
-    dir_path = os.path.join(os.path.dirname(logger.log_dir),model_name+'_checkpoints')
+    dir_path = os.path.join(os.path.dirname(os.path.dirname(logger.log_dir)),f'{model_name}_checkpoints')
     last_path = os.path.join(dir_path,'last.ckpt')
     if os.path.exists(last_path):
         resume_from_checkpoint = last_path
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     # 模型训练
     trainer = pl.Trainer(gpus=config['model']['training parameters']['gpus'],
                          resume_from_checkpoint=resume_from_checkpoint,
-                         fast_dev_run=False,
+                         progress_bar_refresh_rate=None,
                          accumulate_grad_batches=config['data']['data_set']['accumulate_grad_batches'], # 多少批进行一次梯度累积
                          num_sanity_val_steps=config['data']['data_set']['num_sanity_val_steps'], # 训练前检查多少批验证数据
                          limit_train_batches= config['solver']['limit_train_batches'], # 训练数据集 如果是小数则表示百分比
@@ -141,7 +141,7 @@ if __name__ == '__main__':
                          reload_dataloaders_every_epoch=config['solver']['reload_dataloaders_every_epoch'], # 每一轮是否重新载入数据
                          callbacks=[
                              ModelCheckpoint(monitor='val_metrics/mean',
-                                             save_top_k=-1, # 保存前n个最好的模型
+                                             save_top_k=3, # 保存前n个最好的模型
                                              mode='max',
                                              save_last=True,
                                              dirpath=dir_path ,

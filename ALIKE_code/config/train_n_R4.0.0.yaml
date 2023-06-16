@@ -1,8 +1,8 @@
 data:
     name: 'MegaDepth'
-    image_size: [320,320]
-    image_train_path: '/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/megadepth'
-    image_val_path: {hpatch_imw_path:['/media/xin/data1/data/hpatches_sequences/hpatches-sequences-release','/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/imw2020-val'],other_path:[]}
+    image_size: [480,480]
+    image_train_path: '/data2/Relocation/ALIKE/megadepth'
+    image_val_path: {hpatch_imw_path:['/data2/Relocation/ALIKE/hpatches-sequences-release','/data2/Relocation/ALIKE/imw2020-val'],other_path:[]}
     image_type: 'jpg'
     data_set:
         debug: false
@@ -44,9 +44,9 @@ model:
 solver:
     batch_size: 1
     lr: 3e-4
-    reload_dataloaders_every_epoch: True
+    reload_dataloaders_every_epoch: true
     limit_train_batches: 5000
-    limit_val_batches: 0.1
+    limit_val_batches: 1.0
     max_epochs: 200
-    version: 'local_test'
+    version: 'R4.0.0'
 

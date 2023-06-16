@@ -173,7 +173,7 @@ if __name__ == '__main__':
     else:
         reload_dataloaders_every_epoch = True
         limit_train_batches = 5000 // batch_size
-        limit_val_batches = 0.1
+        limit_val_batches = 1.0
         max_epochs = 200
 
     # ========================================= datasets & dataloaders

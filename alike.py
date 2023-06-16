@@ -29,7 +29,8 @@ class ALike(ALNet):
                  top_k: int = 500, scores_th: float = 0.5,
                  n_limit: int = 5000,
                  device: str = 'cpu',
-                 model_path: str = ''
+                 model_path: str = '',
+                 default_model: bool = True
                  ):
         super().__init__(c1, c2, c3, c4, dim, single_head)
         self.radius = radius
@@ -42,7 +43,9 @@ class ALike(ALNet):
 
         if model_path != '':
             state_dict = torch.load(model_path, self.device)
-            # self.load_state_dict(state_dict)
+            if default_model:
+                self.load_state_dict(state_dict)
+
             self.to(self.device)
             self.eval()
             logging.info(f'Loaded model parameters from {model_path}')
