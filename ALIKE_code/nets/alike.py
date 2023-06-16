@@ -114,8 +114,13 @@ class ALIKE(ALNet):
 
         # ==================== convert image to tensor
         H, W, three = image.shape
-        image = ToTensor()(image).unsqueeze(0)
+        if isinstance(image,torch.Tensor):
+            image = image.unsqueeze(0)
+        else:
+            image = ToTensor()(image).unsqueeze(0)
         image = image.to(self.device)
+        with open("a.txt",'a') as f:
+            f.write(f"img:{img.shape},image:{image.shape}")
 
         # ==================== extract keypoints at multiple scales
         start = time.time()

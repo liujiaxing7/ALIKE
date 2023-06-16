@@ -1,8 +1,8 @@
 data:
     name: 'MegaDepth'
-    image_size: [480,480]
-    image_train_path: '/data2/Relocation/ALIKE/megadepth'
-    image_val_path: {hpatch_imw_path:['/data2/Relocation/ALIKE/hpatches-sequences-release','/data2/Relocation/ALIKE/imw2020-val'],other_path:[]}
+    image_size: [320,320]
+    image_train_path: '/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/megadepth'
+    image_val_path: {hpatch_imw_path:['/media/xin/data1/data/hpatches_sequences/hpatches-sequences-release','/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/imw2020-val'],other_path:[]}
     image_type: 'jpg'
     data_set:
         debug: false
@@ -12,7 +12,7 @@ data:
         num_sanity_val_steps: 1
 model:
     name: 'normal'
-    c1_4_dim_single_head: [8,16,48,96,96]
+    c1_4_dim_single_head: [16,32,64,128,128]
     single_head: true
     agg_mode: 'cat'
     pe: false
@@ -48,5 +48,5 @@ solver:
     limit_train_batches: 5000
     limit_val_batches: 0.1
     max_epochs: 200
-    version: 'R4.0.0'
+    version: 'R4.0.1'
 

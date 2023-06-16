@@ -12,14 +12,10 @@ from soft_detect import DKD
 import time
 
 configs = {
-    'alike-t': {'c1': 8, 'c2': 16, 'c3': 32, 'c4': 64, 'dim': 64, 'single_head': True, 'radius': 2,
-                'model_path': os.path.join(os.path.split(__file__)[0], 'models', 'alike-t.pth')},
-    'alike-s': {'c1': 8, 'c2': 16, 'c3': 48, 'c4': 96, 'dim': 96, 'single_head': True, 'radius': 2,
-                'model_path': os.path.join(os.path.split(__file__)[0], 'models', 'alike-s.pth')},
-    'alike-n': {'c1': 16, 'c2': 32, 'c3': 64, 'c4': 128, 'dim': 128, 'single_head': True, 'radius': 2,
-                'model_path': os.path.join(os.path.split(__file__)[0], 'models', 'alike-n.pth')},
-    'alike-l': {'c1': 32, 'c2': 64, 'c3': 128, 'c4': 128, 'dim': 128, 'single_head': False, 'radius': 2,
-                'model_path': os.path.join(os.path.split(__file__)[0], 'models', 'alike-l.pth')},
+    'alike-t': {'c1': 8, 'c2': 16, 'c3': 32, 'c4': 64, 'dim': 64, 'single_head': True, 'radius': 2},
+    'alike-s': {'c1': 8, 'c2': 16, 'c3': 48, 'c4': 96, 'dim': 96, 'single_head': True, 'radius': 2},
+    'alike-n': {'c1': 16, 'c2': 32, 'c3': 64, 'c4': 128, 'dim': 128, 'single_head': True, 'radius': 2},
+    'alike-l': {'c1': 32, 'c2': 64, 'c3': 128, 'c4': 128, 'dim': 128, 'single_head': False, 'radius': 2},
 }
 
 
@@ -46,7 +42,7 @@ class ALike(ALNet):
 
         if model_path != '':
             state_dict = torch.load(model_path, self.device)
-            self.load_state_dict(state_dict)
+            # self.load_state_dict(state_dict)
             self.to(self.device)
             self.eval()
             logging.info(f'Loaded model parameters from {model_path}')

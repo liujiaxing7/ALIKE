@@ -8,3 +8,5 @@ test.py
 *.sh
 *.pkl
 log_train/
+*.txt
+*.pth

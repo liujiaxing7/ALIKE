@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 
-sys.path.append('/work/data/zxw/project/ALIKE/') # 添加模型训练根目录
+sys.path.append('/media/xin/work1/github_pro/ALIKE/') # 添加模型训练根目录
 
 import torch
 import pytorch_lightning as pl
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     # version = time.strftime("Version-%m%d-%H%M%S", time.localtime())
     version = config['solver']['version']
     os.makedirs(log_dir, exist_ok=True)
-    logger = TensorBoardLogger(save_dir=log_dir, name=log_name, version=version, default_hp_metric=False)
+    logger = TensorBoardLogger(save_dir=log_dir, name=log_name, version=version, default_hp_metric=False, sub_dir='loss_tensor')
     logging.info(f'>>>>>>>>>>>>>>>>> log dir: {logger.log_dir}')
     # 训练集
     mega_dataset = [MegaDepthDataset(root=config['data']['image_train_path'], train=True, using_cache=debug, pairs_per_scene=config['data']['data_set']['pairs_per_scene'],
@@ -119,25 +119,32 @@ if __name__ == '__main__':
         lr_scheduler=lr_scheduler,
         debug=debug
     )
+    # 断点续训
+    model_name = config['model']['name']
+    dir_path = os.path.join(os.path.dirname(logger.log_dir),model_name+'_checkpoints')
+    last_path = os.path.join(dir_path,'last.ckpt')
+    if os.path.exists(last_path):
+        resume_from_checkpoint = last_path
+    else:
+        resume_from_checkpoint = None
 
     # 模型训练
     trainer = pl.Trainer(gpus=config['model']['training parameters']['gpus'],
-                         # resume_from_checkpoint='/mnt/data/zxm/document/ALIKE/training/log_train/train/Version-0715-191154/checkpoints/last.ckpt',
-                         # resume_from_checkpoint='/mnt/data/zxm/document/ALIKE/training/log_train/train/Version-0702-195918/checkpoints/last.ckpt',
+                         resume_from_checkpoint=resume_from_checkpoint,
                          fast_dev_run=False,
                          accumulate_grad_batches=config['data']['data_set']['accumulate_grad_batches'], # 多少批进行一次梯度累积
                          num_sanity_val_steps=config['data']['data_set']['num_sanity_val_steps'], # 训练前检查多少批验证数据
-                         limit_train_batches= config['solver']['limit_train_batches'] // config['solver']['batch_size'], # 训练数据集 如果是小数则表示百分比
+                         limit_train_batches= config['solver']['limit_train_batches'], # 训练数据集 如果是小数则表示百分比
                          limit_val_batches=config['solver']['limit_val_batches'], # 验证数据集
                          max_epochs=config['solver']['max_epochs'], # 最多训练轮数
                          logger=logger, # 日志
                          reload_dataloaders_every_epoch=config['solver']['reload_dataloaders_every_epoch'], # 每一轮是否重新载入数据
                          callbacks=[
                              ModelCheckpoint(monitor='val_metrics/mean',
-                                             save_top_k=8, # 保存前n个最好的模型
+                                             save_top_k=-1, # 保存前n个最好的模型
                                              mode='max',
                                              save_last=True,
-                                             dirpath=logger.log_dir + '/checkpoints',
+                                             dirpath=dir_path ,
                                              auto_insert_metric_name=False,
                                              filename='epoch={epoch}-mean_metric={val_metrics/mean:.4f}',
                                              ),
@@ -145,9 +152,9 @@ if __name__ == '__main__':
                              RebuildDatasetCallback()
                          ]
                          )
+    trainer.fit(model, train_dataloaders=train_loader,val_dataloaders=val_dataloaders)
 
-    trainer.fit(model, train_dataloaders=train_loader,
-                val_dataloaders=val_dataloaders)
+
 
 
 

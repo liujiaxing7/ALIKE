@@ -109,6 +109,7 @@ if __name__ == '__main__':
                         help='Image directory.')
     parser.add_argument('--model', choices=['alike-t', 'alike-s', 'alike-n', 'alike-l'], default="alike-n",
                         help="The model configuration")
+    parser.add_argument('--model_path', default="",help="The model configuration")
     parser.add_argument('--device', type=str, default='cuda', help="Running device (default: cuda).")
     parser.add_argument('--top_k', type=int, default=-1,
                         help='Detect top K keypoints. -1 for threshold based mode, >0 for top K mode. (default: -1)')
@@ -124,6 +125,7 @@ if __name__ == '__main__':
 
     image_loader = ImageLoader(args.input)
     model = ALike(**configs[args.model],
+                  model_path=args.model_path,
                   device=args.device,
                   top_k=args.top_k,
                   scores_th=args.scores_th,
