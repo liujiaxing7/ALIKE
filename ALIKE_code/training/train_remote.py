@@ -126,6 +126,7 @@ if __name__ == '__main__':
     last_path = os.path.join(dir_path,'last.ckpt')
     if os.path.exists(last_path):
         resume_from_checkpoint = last_path
+        print('模型继续训练中......')
     else:
         resume_from_checkpoint = None
 

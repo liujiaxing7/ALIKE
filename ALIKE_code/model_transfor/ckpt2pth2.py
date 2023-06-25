@@ -7,15 +7,6 @@ from pytorch_lightning.plugins.io import TorchCheckpointIO as tcio
 from PIL import Image
 from torchvision import transforms
 
-def test_on_image_pair(model, script_model, images):
-    # run model
-    model_res = model(images)
-    script_model_res = script_model(images)
-
-    # 检查结果
-    print(torch.equal(model_res[0],script_model_res[0]))
-    print(torch.equal(model_res[1],script_model_res[1]))
-
 
 def get_model(checkpoint_path,device):
     model = ALNet(c1=16, c2=32, c3=64, c4=128, dim=128, agg_mode='cat', single_head=True)
@@ -42,26 +33,22 @@ def main(checkpoint_path,OUTPUT_MODEL,device):
     image = image.unsqueeze(0).to(device)
     # 加载模型
     model = get_model(checkpoint_path,device)
-
-    # 转为pytorch支持的pth模型
-    script_model = torch.jit.trace(model, image)
-
-    # 保存pth模型
-    torch.jit.save(script_model, OUTPUT_MODEL)
-    # 加载转换后的模型
-    script_model = torch.jit.load(OUTPUT_MODEL)
-
-    # test on same size images
-    test_on_image_pair(model, script_model, image)
-
-
-    print(f'torch script model "{OUTPUT_MODEL}" created and tested')
+    model_res = model(image)  # 模型测试
+    # 直接将模型保存为pth
+    torch.save(model.state_dict(),OUTPUT_MODEL)
+    state_dict = torch.load(OUTPUT_MODEL)
+    model.load_state_dict(state_dict)
+    model_res2 = model(image)
     print("done")
+
+    # 检查结果
+    print(torch.equal(model_res[0], model_res2[0]))
+    print(torch.equal(model_res[1], model_res2[1]))
+
 
 
 if __name__ == "__main__":
-    # ckpt_path = '/media/xin/work1/github_pro/ALIKE/ALIKE_code/training/log_train/train/R4.0.1/normal_checkpoints/epoch=0-mean_metric=0.0733.ckpt'
     ckpt_path = '/media/xin/work1/github_pro/ALIKE/test_model/R4.0.0/epoch=125-mean_metric=0.3589.ckpt'
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    output_model = "script_model1.pth"
+    output_model = "125_torch_model.pth"
     main(ckpt_path,output_model,device)

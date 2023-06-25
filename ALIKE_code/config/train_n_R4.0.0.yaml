@@ -47,6 +47,6 @@ solver:
     reload_dataloaders_every_epoch: true
     limit_train_batches: 5000
     limit_val_batches: 1.0
-    max_epochs: 200
+    max_epochs: 400
     version: 'R4.0.0'
 

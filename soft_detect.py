@@ -90,8 +90,8 @@ class DKD(nn.Module):
     def detect_keypoints(self, scores_map, sub_pixel=True):
         b, c, h, w = scores_map.shape
         scores_nograd = scores_map.detach()
-        # nms_scores = simple_nms(scores_nograd, self.radius)
-        nms_scores = simple_nms(scores_nograd, 2)
+        nms_scores = simple_nms(scores_nograd, self.radius)
+        # nms_scores = simple_nms(scores_nograd, 2)
 
         # remove border
         nms_scores[:, :, :self.radius + 1, :] = 0

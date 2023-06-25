@@ -12,10 +12,10 @@ from soft_detect import DKD
 import time
 
 configs = {
-    'alike-t': {'c1': 8, 'c2': 16, 'c3': 32, 'c4': 64, 'dim': 64, 'single_head': True, 'radius': 2},
-    'alike-s': {'c1': 8, 'c2': 16, 'c3': 48, 'c4': 96, 'dim': 96, 'single_head': True, 'radius': 2},
-    'alike-n': {'c1': 16, 'c2': 32, 'c3': 64, 'c4': 128, 'dim': 128, 'single_head': True, 'radius': 2},
-    'alike-l': {'c1': 32, 'c2': 64, 'c3': 128, 'c4': 128, 'dim': 128, 'single_head': False, 'radius': 2},
+    'alike-t': {'c1': 8, 'c2': 16, 'c3': 32, 'c4': 64, 'dim': 64, 'single_head': True, },
+    'alike-s': {'c1': 8, 'c2': 16, 'c3': 48, 'c4': 96, 'dim': 96, 'single_head': True, },
+    'alike-n': {'c1': 16, 'c2': 32, 'c3': 64, 'c4': 128, 'dim': 128, 'single_head': True,},
+    'alike-l': {'c1': 32, 'c2': 64, 'c3': 128, 'c4': 128, 'dim': 128, 'single_head': False,},
 }
 
 
@@ -30,7 +30,6 @@ class ALike(ALNet):
                  n_limit: int = 5000,
                  device: str = 'cpu',
                  model_path: str = '',
-                 default_model: bool = True
                  ):
         super().__init__(c1, c2, c3, c4, dim, single_head)
         self.radius = radius
@@ -43,9 +42,7 @@ class ALike(ALNet):
 
         if model_path != '':
             state_dict = torch.load(model_path, self.device)
-            if default_model:
-                self.load_state_dict(state_dict)
-
+            self.load_state_dict(state_dict)
             self.to(self.device)
             self.eval()
             logging.info(f'Loaded model parameters from {model_path}')
@@ -122,6 +119,7 @@ class ALike(ALNet):
             scores = scores[indices]
 
         end = time.time()
+        print(torch.min(scores),torch.max(scores),torch.mean(scores))
 
         return {'keypoints': keypoints.cpu().numpy(),
                 'descriptors': descriptors.cpu().numpy(),

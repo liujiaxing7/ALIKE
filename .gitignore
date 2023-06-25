@@ -11,3 +11,4 @@ log_train/
 *.txt
 *.pth
 test_model_save/
+test_model/

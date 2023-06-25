@@ -10,7 +10,7 @@ import numpy as np
 from alike import ALike, configs
 from copy import deepcopy
 from decimal import Decimal
-from ALIKE_code.model_transfor.ckpt2pth import main
+from ALIKE_code.model_transfor.ckpt2pth2 import main
 
 class ImageLoader(object):
     def __init__(self, filepath: str):
@@ -114,11 +114,13 @@ if __name__ == '__main__':
     parser.add_argument('--top_k', type=int, default=-1,
                         help='Detect top K keypoints. -1 for threshold based mode, >0 for top K mode. (default: -1)')
     parser.add_argument('--scores_th', type=float, default=0.2,
-                        help='Detector score threshold (default: 0.2).')
+                        help='Detector score thr eshold (default: 0.2).')
     parser.add_argument('--n_limit', type=int, default=5000,
                         help='Maximum number of keypoints to be detected (default: 5000).')
-    parser.add_argument('--write_dir', type=str, default='',
-                        help='Image save directory.')
+    parser.add_argument('--radius', type=int, default=2,
+                        help='The radius of non-maximum suppression (default: 2).')
+    parser.add_argument('--write_dir', type=str, default='',help='Image save directory.')
+    parser.add_argument('--version', type=str, default='',help='version')
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -132,15 +134,19 @@ if __name__ == '__main__':
         'alike-l': os.path.join(os.path.split(__file__)[0], 'models', 'alike-l.pth')
     }
 
-    default_model = True
     model_path = args.model_path
-    output_model_path = os.path.join('/media/xin/work1/github_pro/ALIKE/test_model_save',f"{os.path.basename(model_path).split('.')[0]}.pth")
+    version = args.version
+    if not version:
+        raise Exception("version is not none!")
+    test_model_save_path = os.path.join('/media/xin/work1/github_pro/ALIKE/test_model_save',version)
+    os.makedirs(test_model_save_path, exist_ok=True) # 模型保存路径
+    output_model_path = os.path.join(test_model_save_path,f"{os.path.basename(model_path).split('.')[0]}.pth")
 
-    if model_path.endswith('.ckpt'): # 如果是ckpt，则转换
-        main(model_path,output_model_path,args.device)
+    if model_path.endswith('.ckpt'): # 如果是ckpt并且模型不存在，则转换
+        if not os.path.exists(output_model_path):
+            main(model_path,output_model_path,args.device)
+            print("模型转换成功!")
         model_path = output_model_path
-        print("模型转换成功!")
-        default_model = False
     elif model_path == 'default': # 如果是默认，则自动加载开源模型
         model_path = model_path_default[args.model]
 
@@ -148,9 +154,9 @@ if __name__ == '__main__':
                   model_path=model_path,
                   device=args.device,
                   top_k=args.top_k,
+                  radius=args.radius,
                   scores_th=args.scores_th,
-                  n_limit=args.n_limit,
-                  default_model=default_model
+                  n_limit=args.n_limit
                   )
 
     logging.info("Press 'space' to start. \nPress 'q' or 'ESC' to stop!")
@@ -165,7 +171,7 @@ if __name__ == '__main__':
     sum_net_t = []
     sum_net_matches_t = []
     sum_total_t = []  # 初始化时间列表
-    for i in range(1000,len(image_loader)):
+    for i in range(0,len(image_loader)):
         start = time.time()
         img,img_name = image_loader[i]
         img2,img2_name = image_loader2[i]
@@ -229,8 +235,8 @@ if __name__ == '__main__':
         if c == ord('q') or c == 27:
             break
 
-        # if i == 1100 or i ==110:
-        #     break
+        if i == 1100 or i ==110:
+            break
     # 计算平均帧率
     avg_net_FPS = np.mean(sum_net_t[1:len(sum_net_t)-1])
     avg_net_matches_FPS = np.mean(sum_net_matches_t[1:len(sum_net_matches_t)-1])
