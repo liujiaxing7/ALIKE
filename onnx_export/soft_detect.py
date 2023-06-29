@@ -154,10 +154,10 @@ class DKD(nn.Module):
                 keypoints_xy = keypoints_xy / keypoints_xy.new_tensor(
                     [w - 1, h - 1]) * 2 - 1  # (w,h) -> (-1~1,-1~1)
 
-                kptscore = torch.nn.functional.grid_sample(scores_map[b_idx].unsqueeze(0),
-                                                           keypoints_xy.view(1, 1, -1, 2),
-                                                           mode='bilinear', align_corners=True)[0, 0, 0, :]  # CxN
-                # kptscore = bilinear_grid_sample(scores_map[b_idx].unsqueeze(0),keypoints_xy.view(1, 1, -1, 2), align_corners=True)[0, 0, 0, :]  # CxN
+                # kptscore = torch.nn.functional.grid_sample(scores_map[b_idx].unsqueeze(0),
+                #                                            keypoints_xy.view(1, 1, -1, 2),
+                #                                            mode='bilinear', align_corners=True)[0, 0, 0, :]  # CxN
+                kptscore = bilinear_grid_sample(scores_map[b_idx].unsqueeze(0),keypoints_xy.view(1, 1, -1, 2), align_corners=True)[0, 0, 0, :]  # CxN
                 keypoints.append(keypoints_xy)
                 scoredispersitys.append(scoredispersity)
                 kptscores.append(kptscore)
@@ -167,11 +167,11 @@ class DKD(nn.Module):
                 keypoints_xy_nms = torch.stack([indices_kpt % w, indices_kpt // w], dim=1)  # Mx2
                 keypoints_xy = keypoints_xy_nms / keypoints_xy_nms.new_tensor(
                     [w - 1, h - 1]) * 2 - 1  # (w,h) -> (-1~1,-1~1)
-                kptscore = torch.nn.functional.grid_sample(scores_map[b_idx].unsqueeze(0),
-                                                           keypoints_xy.view(1, 1, -1, 2),
-                                                           mode='bilinear', align_corners=True)[0, 0, 0, :]  # CxN
-                # kptscore = bilinear_grid_sample(scores_map[b_idx].unsqueeze(0), keypoints_xy.view(1, 1, -1, 2),
-                #                                 align_corners=True)[0, 0, 0, :]  # CxN
+                # kptscore = torch.nn.functional.grid_sample(scores_map[b_idx].unsqueeze(0),
+                #                                            keypoints_xy.view(1, 1, -1, 2),
+                #                                            mode='bilinear', align_corners=True)[0, 0, 0, :]  # CxN
+                kptscore = bilinear_grid_sample(scores_map[b_idx].unsqueeze(0), keypoints_xy.view(1, 1, -1, 2),
+                                                align_corners=True)[0, 0, 0, :]  # CxN
                 keypoints.append(keypoints_xy)
                 scoredispersitys.append(None)
                 kptscores.append(kptscore)
