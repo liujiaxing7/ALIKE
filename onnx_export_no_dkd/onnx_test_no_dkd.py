@@ -1,5 +1,6 @@
 ###双输入图片测试
 import math
+import time
 from copy import deepcopy
 
 import onnxruntime as ort
@@ -88,9 +89,9 @@ def plot_matches(image0,image1,kpts0,kpts1,matches,radius=2,color=(255, 0, 0)):
 
 def post_deal(flg,W,H,scores_map, descriptor_map,radius=2,top_k=2000, scores_th=0.2,n_limit=5000,sort=False):
     descriptor_map = torch.nn.functional.normalize(descriptor_map, p=2, dim=1)
-    if flg:
-        descriptor_map = descriptor_map[:, :, :H, :W]
-        scores_map = scores_map[:, :, :H, :W]  # Bx1xHxW
+    # if flg:
+    #     descriptor_map = descriptor_map[:, :, :H, :W]
+    #     scores_map = scores_map[:, :, :H, :W]  # Bx1xHxW
 
     keypoints, descriptors, scores, _ = DKD(radius=radius, top_k=top_k,scores_th=scores_th, n_limit=n_limit).forward(scores_map, descriptor_map)
     keypoints, descriptors, scores = keypoints[0], descriptors[0], scores[0]
@@ -150,14 +151,16 @@ def main(model_file):
     img_rgb1,flg1,H1,W1 = pre_deal_np(img1)
     img_rgb2,flg2,H2,W2 = pre_deal_np(img2)
     # 加载 onnx_export
+    start = time.time()
     model = ONNXModel(model_file)
+    print("时间：",time.time()-start)
     result1 = model.forward(img_rgb1)[0]
-    descriptor_map1 = torch.from_numpy(result1[:, :-1, :, :])
-    scores_map1 = torch.sigmoid(torch.from_numpy(result1[:, -1, :, :])).unsqueeze(1)
+    descriptor_map1 = torch.from_numpy(result1[:, :-1, :H1, :W1])
+    scores_map1 = torch.sigmoid(torch.from_numpy(result1[:, -1, :H1, :W1])).unsqueeze(1)
     output1 = post_deal(flg1,W1,H1,scores_map1, descriptor_map1)
     result2 = model.forward(img_rgb2)[0]
-    descriptor_map2  = torch.from_numpy(result2[:, :-1, :, :])
-    scores_map2 = torch.sigmoid(torch.from_numpy(result2[:, -1, :, :])).unsqueeze(1)
+    descriptor_map2  = torch.from_numpy(result2[:, :-1, :H2, :W2])
+    scores_map2 = torch.sigmoid(torch.from_numpy(result2[:, -1, :H2, :W2])).unsqueeze(1)
     output2 = post_deal(flg2,W2,H2,scores_map2, descriptor_map2)
     kpts = output1['keypoints']
     desc = output1['descriptors']
