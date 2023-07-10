@@ -18,6 +18,17 @@ ALIKE applies a differentiable keypoint detection module to detect accurate sub-
 If you use ALIKE in an academic work, please cite:
 
 ```
+@article{Zhao2023ALIKED,
+    title = {ALIKED: A Lighter Keypoint and Descriptor Extraction Network via Deformable Transformation},
+    url = {https://arxiv.org/pdf/2304.03608.pdf},
+    doi = {10.1109/TIM.2023.3271000},
+    journal = {IEEE Transactions on Instrumentation & Measurement},
+    author = {Zhao, Xiaoming and Wu, Xingming and Chen, Weihai and Chen, Peter C. Y. and Xu, Qingsong and Li, Zhengguo},
+    year = {2023},
+    volume = {72},
+    pages = {1-16},
+}
+
 @article{Zhao2022ALIKE,
     title = {ALIKE: Accurate and Lightweight Keypoint Detection and Descriptor Extraction},
     url = {http://arxiv.org/abs/2112.02906},
@@ -39,6 +50,12 @@ The required packages are listed in the `requirements.txt` :
 pip install -r requirements.txt
 ```
 
+export onnx:  
+- [ ] todo
+
+export rknn:   
+- [ ] todo
+
 
 
 ## 2. Models
@@ -47,7 +64,24 @@ The off-the-shelf weights of four variant ALIKE models are provided in `models/`
 
 
 
-## 3. Run demo
+## 3. Run
+### 3.1 export onnx    
+```shell
+python onnx/convert_onnx.py --output alike.onnx
+```
+
+### 3.2 export A311D    
+```shell
+cd aml_npu_sdk_6.4.3/acuity-toolkit/conversion_scripts/abby2
+./0_import_model.sh alike.onnx && ./1_quantize_model.sh alike && ./2_export_case_code.sh alike
+```
+
+### 3.3 export rknn    
+```shell
+python3 rknn_convert/rknn_convert.py
+```
+
+### 3.4 run demo
 
 ```shell
 $ python demo.py -h

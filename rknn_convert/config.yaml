@@ -1,0 +1,81 @@
+running:
+  model_type: onnx
+  export: True
+  inference: True
+  eval_perf: False
+
+
+parameters:
+  caffe:
+    model: './mobilenet_v2.prototxt'
+    proto: 'caffe' #lstm_caffe
+    blobs: './mobilenet_v2.caffemodel'
+
+  tensorflow:
+    tf_pb: './ssd_mobilenet_v1_coco_2017_11_17.pb'
+    inputs: ['FeatureExtractor/MobilenetV1/MobilenetV1/Conv2d_0/BatchNorm/batchnorm/mul_1']
+    outputs: ['concat', 'concat_1']
+    input_size_list: [[300, 300, 3]]
+
+  tflite:
+    model: './sample/tflite/mobilenet_v1/mobilenet_v1.tflite'
+
+  onnx:
+    model: '/WORK/MODEL/Relocation/Alike/alike.onnx'
+
+  darknet:
+    model: './yolov3-tiny.cfg'
+    weight: './yolov3.weights'
+
+  pytorch:
+    model: './yolov5.pt'
+    input_size_list: [[3, 512, 512]]
+
+  mxnet:
+    symbol: 'resnext50_32x4d-symbol.json'
+    params: 'resnext50_32x4d-4ecf62e2.params'
+    input_size_list: [[3, 224, 224]]
+
+  rknn:
+    path: '/media/hao/CODE/MODEL/Abby/A6.0.1/test.rknn'
+
+config:
+  mean_values: [0, 0, 0] # 123.675 116.28 103.53 58.395 # 0 0 0 255
+  std_values: [255, 255, 255]
+  quant_img_RGB2BGR: True # '2 1 0' # '0 1 2' '2 1 0'
+  target_platform: 'rk3566'
+  quantized_dtype: 'asymmetric_quantized-8' # asymmetric_quantized-u8,dynamic_fixed_point-8,dynamic_fixed_point-16
+  optimization_level: 1
+
+build:
+  do_quantization: True
+  dataset: './single_dataset.txt'
+
+export_rknn:
+  export_path: '/WORK/MODEL/Relocation/Alike/alike.rknn'
+
+init_runtime:
+  target: null
+  device_id: null
+  perf_debug: False
+  eval_mem: False
+  async_mode: False
+
+img: &img
+  path: './bus.jpg'
+
+inference:
+  inputs: *img
+  data_type: 'uint8'
+  data_format: 'nhwc' # 'nchw', 'nhwc'
+  inputs_pass_through: None 
+
+eval_perf:
+  inputs: *img
+  data_type: 'uint8'
+  data_format: 'nhwc'
+  is_print: True
+
+
+
+

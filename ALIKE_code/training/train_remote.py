@@ -143,7 +143,7 @@ if __name__ == '__main__':
                          reload_dataloaders_every_epoch=config['solver']['reload_dataloaders_every_epoch'], # 每一轮是否重新载入数据
                          callbacks=[
                              ModelCheckpoint(monitor='val_metrics/mean',
-                                             save_top_k=3, # 保存前n个最好的模型
+                                             save_top_k=-1, # 保存前n个最好的模型
                                              mode='max',
                                              save_last=True,
                                              dirpath=dir_path ,
