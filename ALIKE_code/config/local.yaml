@@ -1,6 +1,6 @@
 data:
     name: 'MegaDepth'
-    image_size: [320,320]
+    image_size: [384,640]
     image_train_path: '/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/megadepth'
     image_val_path: {hpatch_imw_path:['/media/xin/data1/data/hpatches_sequences/hpatches-sequences-release','/media/xin/data1/data/disk_data/datasets.epfl.ch/disk-data/imw2020-val'],other_path:[]}
     image_type: 'jpg'

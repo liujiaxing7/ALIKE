@@ -218,29 +218,29 @@ class MegaDepthDataset(Dataset):
                 # =============== padding
                 h1, w1, _ = image1.shape
                 h2, w2, _ = image2.shape
-                if h1 < self.image_size:
-                    padding = np.zeros((self.image_size - h1, w1, 3))
+                if h1 < self.image_size[0]:
+                    padding = np.zeros((self.image_size[0] - h1, w1, 3))
                     image1 = np.concatenate([image1, padding], axis=0).astype(np.uint8)
                     depth1 = np.concatenate([depth1, padding[:, :, 0]], axis=0).astype(np.float32)
                     h1, w1, _ = image1.shape
-                if w1 < self.image_size:
-                    padding = np.zeros((h1, self.image_size - w1, 3))
+                if w1 < self.image_size[1]:
+                    padding = np.zeros((h1, self.image_size[1] - w1, 3))
                     image1 = np.concatenate([image1, padding], axis=1).astype(np.uint8)
                     depth1 = np.concatenate([depth1, padding[:, :, 0]], axis=1).astype(np.float32)
-                if h2 < self.image_size:
-                    padding = np.zeros((self.image_size - h2, w2, 3))
+                if h2 < self.image_size[0]:
+                    padding = np.zeros((self.image_size[0] - h2, w2, 3))
                     image2 = np.concatenate([image2, padding], axis=0).astype(np.uint8)
                     depth2 = np.concatenate([depth2, padding[:, :, 0]], axis=0).astype(np.float32)
                     h2, w2, _ = image2.shape
-                if w2 < self.image_size:
-                    padding = np.zeros((h2, self.image_size - w2, 3))
+                if w2 < self.image_size[1]:
+                    padding = np.zeros((h2, self.image_size[1] - w2, 3))
                     image2 = np.concatenate([image2, padding], axis=1).astype(np.uint8)
                     depth2 = np.concatenate([depth2, padding[:, :, 0]], axis=1).astype(np.float32)
                 # =============== padding
                 image1, bbox1, image2, bbox2 = self.crop(image1, image2, central_match)
 
-                depth1 = depth1[bbox1[0]: bbox1[0] + self.image_size, bbox1[1]: bbox1[1] + self.image_size]
-                depth2 = depth2[bbox2[0]: bbox2[0] + self.image_size, bbox2[1]: bbox2[1] + self.image_size]
+                depth1 = depth1[bbox1[0]: bbox1[0] + self.image_size[0], bbox1[1]: bbox1[1] + self.image_size[1]]
+                depth2 = depth2[bbox2[0]: bbox2[0] + self.image_size[0], bbox2[1]: bbox2[1] + self.image_size[1]]
             elif self.crop_or_scale == 'scale':
                 image1, depth1, intrinsics1 = self.scale(image1, depth1, intrinsics1)
                 image2, depth2, intrinsics2 = self.scale(image2, depth2, intrinsics2)
@@ -259,9 +259,9 @@ class MegaDepthDataset(Dataset):
 
     def scale(self, image, depth, intrinsic):
         img_size_org = image.shape
-        image = cv2.resize(image, (self.image_size, self.image_size))
-        depth = cv2.resize(depth.astype("float32"), (self.image_size, self.image_size))
-        intrinsic = scale_intrinsics(intrinsic, (img_size_org[1] / self.image_size, img_size_org[0] / self.image_size))
+        image = cv2.resize(image, (self.image_size[1], self.image_size[0]))
+        depth = cv2.resize(depth.astype("float32"), (self.image_size[1], self.image_size[0]))
+        intrinsic = scale_intrinsics(intrinsic, (img_size_org[1] / self.image_size[1], img_size_org[0] / self.image_size[0]))
         return image, depth, intrinsic
 
     def crop_scale(self, image, depth, intrinsic, centeral):
@@ -289,30 +289,30 @@ class MegaDepthDataset(Dataset):
         intrinsic[0, 2] = intrinsic[0, 2] - w_start
         intrinsic[1, 2] = intrinsic[1, 2] - h_start
 
-        image = cv2.resize(croped_image, (self.image_size, self.image_size))
-        depth = cv2.resize(croped_depth, (self.image_size, self.image_size))
-        intrinsic = scale_intrinsics(intrinsic, (image_size / self.image_size, image_size / self.image_size))
+        image = cv2.resize(croped_image, (self.image_size[1], self.image_size[0]))
+        depth = cv2.resize(croped_depth, (self.image_size[1], self.image_size[0]))
+        intrinsic = scale_intrinsics(intrinsic, (image_size / self.image_size[0], image_size / self.image_size[1]))
 
         return image, depth, intrinsic
 
     def crop(self, image1, image2, central_match):
-        bbox1_i = max(int(central_match[0]) - self.image_size // 2, 0)
-        if bbox1_i + self.image_size >= image1.shape[0]:
-            bbox1_i = image1.shape[0] - self.image_size
-        bbox1_j = max(int(central_match[1]) - self.image_size // 2, 0)
-        if bbox1_j + self.image_size >= image1.shape[1]:
-            bbox1_j = image1.shape[1] - self.image_size
+        bbox1_i = max(int(central_match[0]) - self.image_size[0] // 2, 0)
+        if bbox1_i + self.image_size[0] >= image1.shape[0]:
+            bbox1_i = image1.shape[0] - self.image_size[0]
+        bbox1_j = max(int(central_match[1]) - self.image_size[1] // 2, 0)
+        if bbox1_j + self.image_size[1] >= image1.shape[1]:
+            bbox1_j = image1.shape[1] - self.image_size[1]
 
-        bbox2_i = max(int(central_match[2]) - self.image_size // 2, 0)
-        if bbox2_i + self.image_size >= image2.shape[0]:
-            bbox2_i = image2.shape[0] - self.image_size
-        bbox2_j = max(int(central_match[3]) - self.image_size // 2, 0)
-        if bbox2_j + self.image_size >= image2.shape[1]:
-            bbox2_j = image2.shape[1] - self.image_size
+        bbox2_i = max(int(central_match[2]) - self.image_size[0] // 2, 0)
+        if bbox2_i + self.image_size[0] >= image2.shape[0]:
+            bbox2_i = image2.shape[0] - self.image_size[0]
+        bbox2_j = max(int(central_match[3]) - self.image_size[1] // 2, 0)
+        if bbox2_j + self.image_size[1] >= image2.shape[1]:
+            bbox2_j = image2.shape[1] - self.image_size[1]
 
-        return (image1[bbox1_i: bbox1_i + self.image_size, bbox1_j: bbox1_j + self.image_size],
+        return (image1[bbox1_i: bbox1_i + self.image_size[0], bbox1_j: bbox1_j + self.image_size[1]],
                 np.array([bbox1_i, bbox1_j]),
-                image2[bbox2_i: bbox2_i + self.image_size, bbox2_j: bbox2_j + self.image_size],
+                image2[bbox2_i: bbox2_i + self.image_size[0], bbox2_j: bbox2_j + self.image_size[1]],
                 np.array([bbox2_i, bbox2_j])
                 )
 
@@ -335,8 +335,8 @@ class MegaDepthDataset(Dataset):
                'angle': self.dataset[idx]['angle'] if 'angle' in self.dataset[idx] else 0,
                'overlap': self.dataset[idx]['overlap_ratio'] if 'overlap_ratio' in self.dataset[idx] else 0,
                'warp01_params': {'mode': 'se3',
-                                 'width': self.image_size if self.train else image1.shape[2],
-                                 'height': self.image_size if self.train else image1.shape[1],
+                                 'width': self.image_size[1] if self.train else image1.shape[2],
+                                 'height': self.image_size[0] if self.train else image1.shape[1],
                                  'pose01': torch.from_numpy(pose12.astype(np.float32)),
                                  'bbox0': torch.from_numpy(bbox1.astype(np.float32)),
                                  'bbox1': torch.from_numpy(bbox2.astype(np.float32)),
@@ -345,8 +345,8 @@ class MegaDepthDataset(Dataset):
                                  'intrinsics0': torch.from_numpy(intrinsics1.astype(np.float32)),
                                  'intrinsics1': torch.from_numpy(intrinsics2.astype(np.float32))},
                'warp10_params': {'mode': 'se3',
-                                 'width': self.image_size if self.train else image2.shape[2],
-                                 'height': self.image_size if self.train else image2.shape[2],
+                                 'width': self.image_size[1] if self.train else image2.shape[2],
+                                 'height': self.image_size[0] if self.train else image2.shape[2],
                                  'pose01': torch.from_numpy(pose21.astype(np.float32)),
                                  'bbox0': torch.from_numpy(bbox2.astype(np.float32)),
                                  'bbox1': torch.from_numpy(bbox1.astype(np.float32)),
@@ -388,7 +388,7 @@ if __name__ == '__main__':
         train=True,
         using_cache=True,
         pairs_per_scene=8,  # 随机采集的数据
-        image_size=256,
+        image_size=[384,640],
         colorjit=True,
         gray=False,
         crop_or_scale='scale',

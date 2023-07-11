@@ -1,6 +1,6 @@
 data:
     name: 'MegaDepth'
-    image_size: [480,480]
+    image_size: [384,640]
     image_train_path: '/data2/Relocation/ALIKE/megadepth'
     image_val_path: {hpatch_imw_path:['/data2/Relocation/ALIKE/hpatches-sequences-release','/data2/Relocation/ALIKE/imw2020-val'],other_path:[]}
     image_type: 'jpg'

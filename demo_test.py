@@ -117,7 +117,7 @@ if __name__ == '__main__':
                         help='Detector score thr eshold (default: 0.2).')
     parser.add_argument('--n_limit', type=int, default=5000,
                         help='Maximum number of keypoints to be detected (default: 5000).')
-    parser.add_argument('--radius', type=int, default=2,
+    parser.add_argument('--radius', type=int, default=4,
                         help='The radius of non-maximum suppression (default: 2).')
     parser.add_argument('--write_dir', type=str, default='',help='Image save directory.')
     parser.add_argument('--version', type=str, default='',help='version')
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     sum_net_t = []
     sum_net_matches_t = []
     sum_total_t = []  # 初始化时间列表
-    for i in range(0,len(image_loader)):
+    for i in range(4600,len(image_loader)):
         start = time.time()
         img,img_name = image_loader[i]
         img2,img2_name = image_loader2[i]
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         if c == ord('q') or c == 27:
             break
 
-        if i == 1100 or i ==110:
+        if i == 1100 or i ==110 or i == 4700:
             break
     # 计算平均帧率
     avg_net_FPS = np.mean(sum_net_t[1:len(sum_net_t)-1])

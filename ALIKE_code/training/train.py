@@ -65,7 +65,7 @@ if __name__ == '__main__':
     logging.info(f'>>>>>>>>>>>>>>>>> log dir: {logger.log_dir}')
     # 训练集
     mega_dataset = [MegaDepthDataset(root=config['data']['image_train_path'], train=True, using_cache=debug, pairs_per_scene=config['data']['data_set']['pairs_per_scene'],
-                                     image_size=config['data']['image_size'][0], gray=False, colorjit=True, crop_or_scale=t,img_type=config['data']['image_type']) for t in ['crop','scale']]
+                                     image_size=config['data']['image_size'], gray=False, colorjit=True, crop_or_scale=t,img_type=config['data']['image_type']) for t in ['crop','scale']]
     train_datasets = ConcatDatasets(*mega_dataset)
     train_loader = DataLoader(train_datasets, batch_size=config['solver']['batch_size'], shuffle=True, pin_memory=not debug,
                               num_workers=num_workers)
