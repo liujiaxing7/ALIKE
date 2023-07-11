@@ -10,7 +10,7 @@ rknn转换模型所需要修改的参数写出yaml格式，方便修改切换。
 
 ```yaml
 running:						# 执行部分，设置为false时对应操作将不会执行
-  model_type: onnx				# 选择导入模型的类型，必选。为待 转换模型/ rknn模型
+  model_type: onnx_new				# 选择导入模型的类型，必选。为待 转换模型/ rknn模型
   export: True					# 执行模型导出(含转换行为，转换过程中的参数在后面)
   inference: False				# 执行推断
   eval_perf: False 				# 执行速度评估
@@ -31,7 +31,7 @@ parameters:						# 选择模型类型，各模型参数说明请查看rknn文档
     model: './sample/tflite/mobilenet_v1/mobilenet_v1.tflite'
 
   onnx:
-    model: './best.onnx'
+    model: './best.onnx_new'
 
   darknet:
     model: './yolov3-tiny.cfg'

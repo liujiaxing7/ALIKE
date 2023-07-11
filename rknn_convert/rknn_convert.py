@@ -11,7 +11,7 @@ _model_load_dict = {
     'caffe': 'load_caffe',
     'tensorflow': 'load_tensorflow',
     'tflite': 'load_tflite',
-    'onnx': 'load_onnx',
+    'onnx_new': 'load_onnx',
     'darknet': 'load_darknet',
     'pytorch': 'load_pytorch',
     'mxnet': 'load_mxnet',

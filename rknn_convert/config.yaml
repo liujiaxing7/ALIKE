@@ -1,5 +1,5 @@
 running:
-  model_type: onnx
+  model_type: onnx_new
   export: True
   inference: True
   eval_perf: False
@@ -21,7 +21,7 @@ parameters:
     model: './sample/tflite/mobilenet_v1/mobilenet_v1.tflite'
 
   onnx:
-    model: '/WORK/MODEL/Relocation/Alike/alike.onnx'
+    model: '/WORK/MODEL/Relocation/Alike/alike.onnx_new'
 
   darknet:
     model: './yolov3-tiny.cfg'
