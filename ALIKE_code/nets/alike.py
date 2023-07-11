@@ -3,9 +3,11 @@ import math
 import torch
 import logging
 from copy import deepcopy
+
+from torch import nn
 from torchvision.transforms import ToTensor
 
-from ALIKE_code.nets.alnet import ALNet
+from ALIKE_code.nets.alnet_dkd import ALNet
 from ALIKE_code.nets.soft_detect import SoftDetect
 import time
 
@@ -42,8 +44,8 @@ class ALIKE(ALNet):
         # if it is not a integer multiples of 2^5, padding zeros
         device = image.device
         b, c, h, w = image.shape
-        h_ = math.ceil(h / 32) * 32 if h % 32 != 0 else h
-        w_ = math.ceil(w / 32) * 32 if w % 32 != 0 else w
+        h_ = math.ceil(h / 8) * 8 if h % 8 != 0 else h
+        w_ = math.ceil(w / 8) * 8 if w % 8 != 0 else w
         if h_ != h:
             h_padding = torch.zeros(b, c, h_ - h, w, device=device)
             image = torch.cat([image, h_padding], dim=2)
@@ -64,6 +66,8 @@ class ALIKE(ALNet):
         descriptor_map = torch.nn.functional.normalize(descriptor_map, p=2, dim=1)
 
         if ret_dict:
+            m = nn.Upsample(scale_factor=8, mode='bicubic', align_corners=True)  # 8倍上采样
+            descriptor_map = m(descriptor_map) # BxCxHxW
             return {'descriptor_map': descriptor_map, 'scores_map': scores_map, }
         else:
             return descriptor_map, scores_map
@@ -119,8 +123,7 @@ class ALIKE(ALNet):
         else:
             image = ToTensor()(image).unsqueeze(0)
         image = image.to(self.device)
-        with open("a.txt",'a') as f:
-            f.write(f"img:{img.shape},image:{image.shape}")
+
 
         # ==================== extract keypoints at multiple scales
         start = time.time()
