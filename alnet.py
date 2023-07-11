@@ -79,6 +79,8 @@ class ResBlock(nn.Module):
 
         return out
 
+def UpSample(channels, scale_factor):
+    return nn.ConvTranspose2d(channels, channels, kernel_size=scale_factor, stride=scale_factor)
 
 class ALNet(nn.Module):
     def __init__(self, c1: int = 32, c2: int = 64, c3: int = 128, c4: int = 128, dim: int = 128,
@@ -111,16 +113,23 @@ class ALNet(nn.Module):
         self.conv2 = resnet.conv1x1(c2, dim // 4)
         self.conv3 = resnet.conv1x1(c3, dim // 4)
         self.conv4 = resnet.conv1x1(dim, dim // 4)
-        self.upsample2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        self.upsample4 = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
-        self.upsample8 = nn.Upsample(scale_factor=8, mode='bilinear', align_corners=True)
-        self.upsample32 = nn.Upsample(scale_factor=32, mode='bilinear', align_corners=True)
+        # self.upsample2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        # self.upsample4 = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
+        # self.upsample8 = nn.Upsample(scale_factor=8, mode='bilinear', align_corners=True)
+        # self.upsample32 = nn.Upsample(scale_factor=32, mode='bilinear', align_corners=True)
+        channel = dim // 4
+        self.upsample2 = UpSample(channel, 2)
+        self.upsample4 = UpSample(channel, 4)
+        self.upsample8 = UpSample(channel, 8)
+        self.upsample32 = UpSample(channel, 32)
 
         # ================================== detector and descriptor head
         self.single_head = single_head
-        if not self.single_head:
-            self.convhead1 = resnet.conv1x1(dim, dim)
-        self.convhead2 = resnet.conv1x1(dim, dim + 1)
+        # if not self.single_head:
+        #     self.convhead1 = resnet.conv1x1(dim, dim)
+        # self.convhead2 = resnet.conv1x1(dim, dim + 1)
+        self.head_descriptor = resnet.conv1x1(dim, dim)
+        self.head_score = resnet.conv1x1(dim, 1)
 
     def forward(self, image):
         # ================================== feature encoder
@@ -143,12 +152,18 @@ class ALNet(nn.Module):
         x1234 = torch.cat([x1, x2_up, x3_up, x4_up], dim=1)
 
         # ================================== detector and descriptor head
-        if not self.single_head:
-            x1234 = self.gate(self.convhead1(x1234))
-        x = self.convhead2(x1234)  # B x dim+1 x H x W
+        # if not self.single_head:
+        #     x1234 = self.gate(self.convhead1(x1234))
+        # x = self.convhead2(x1234)  # B x dim+1 x H x W
+        #
+        # descriptor_map = x[:, :-1, :, :]
+        # scores_map = torch.sigmoid(x[:, -1, :, :]).unsqueeze(1)
 
-        descriptor_map = x[:, :-1, :, :]
-        scores_map = torch.sigmoid(x[:, -1, :, :]).unsqueeze(1)
+        if not self.single_head:
+            x1234 = self.gate(self.head_descriptor(x1234))
+
+        descriptor_map = self.head_descriptor(x1234)  # B x dim x H x W
+        scores_map = torch.sigmoid(self.head_score(x1234))   # B x 1 x H x W
 
         return scores_map, descriptor_map
 
