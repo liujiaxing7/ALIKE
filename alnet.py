@@ -149,7 +149,8 @@ class ALNet(nn.Module):
         x2_up = self.upsample2(x2)  # B x dim//4 x H x W
         x3_up = self.upsample8(x3)  # B x dim//4 x H x W
         x4_up = self.upsample32(x4)  # B x dim//4 x H x W
-        x1234 = torch.cat([x1, x2_up, x3_up, x4_up], dim=1)
+        # x1234 = torch.cat([x1, x2_up, x3_up, x4_up], dim=1)
+        x1234 = torch.cat([x1, x2_up, x2_up, x2_up], dim=1)
 
         # ================================== detector and descriptor head
         # if not self.single_head:

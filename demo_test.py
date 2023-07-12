@@ -64,8 +64,8 @@ def plot_matches(image0,
                  kpts0,
                  kpts1,
                  matches,
-                 radius=2,
-                 color=(255, 0, 0)):
+                 radius=1,
+                 color=(0, 255, 0)):
     out0 = plot_keypoints(image0, kpts0, radius, color)
     out1 = plot_keypoints(image1, kpts1, radius, color)
 
@@ -117,7 +117,7 @@ if __name__ == '__main__':
                         help='Detector score thr eshold (default: 0.2).')
     parser.add_argument('--n_limit', type=int, default=5000,
                         help='Maximum number of keypoints to be detected (default: 5000).')
-    parser.add_argument('--radius', type=int, default=4,
+    parser.add_argument('--radius', type=int, default=2,
                         help='The radius of non-maximum suppression (default: 2).')
     parser.add_argument('--write_dir', type=str, default='',help='Image save directory.')
     parser.add_argument('--version', type=str, default='',help='version')
