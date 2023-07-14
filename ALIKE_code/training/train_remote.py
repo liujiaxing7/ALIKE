@@ -26,6 +26,27 @@ from ALIKE_code.training.scheduler import WarmupConstantSchedule
 
 from pytorch_lightning.callbacks.base import Callback
 
+class CustomModelCheckpoint(ModelCheckpoint):
+    def __init__(self, *args,**kwargs):
+        super().__init__(*args,**kwargs)
+
+    def save_checkpoint(self, trainer):
+        # 调用父类的 save_checkpoint() 方法以保持原有的功能
+        super().save_checkpoint(trainer)
+
+        # 获取模型权重
+        state_dict = trainer.lightning_module.state_dict()
+
+        # 构造保存路径和文件名
+        best_model_path = trainer.checkpoint_callback.best_model_path
+        model_name = ".".join(os.path.basename(best_model_path).split('.')[:-1]) + '.pth'
+        path = os.path.abspath(os.path.dirname(os.path.dirname(best_model_path)))
+        sava_path = os.path.join(path, 'pth_path')
+        if not os.path.exists(sava_path):
+            os.makedirs(sava_path)
+        pth_model_save_path = os.path.join(sava_path, model_name)
+        # 保存模型权重为 pth 文件
+        torch.save(state_dict, pth_model_save_path)
 
 class RebuildDatasetCallback(Callback):
     def __init__(self):
@@ -151,7 +172,8 @@ if __name__ == '__main__':
                                              filename='epoch={epoch}-mean_metric={val_metrics/mean:.4f}',
                                              ),
                              LearningRateMonitor(logging_interval='step'),
-                             RebuildDatasetCallback()
+                             RebuildDatasetCallback(),
+                             CustomModelCheckpoint()
                          ]
                          )
     trainer.fit(model, train_dataloaders=train_loader,val_dataloaders=val_dataloaders)

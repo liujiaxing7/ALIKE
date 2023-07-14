@@ -45,8 +45,8 @@ solver:
     batch_size: 1
     lr: 3e-4
     reload_dataloaders_every_epoch: True
-    limit_train_batches: 5000
-    limit_val_batches: 0.1
+    limit_train_batches: 1000
+    limit_val_batches: 0.005
     max_epochs: 200
     version: 'local_test_new'
 
