@@ -59,11 +59,13 @@ def plot_keypoints(image, kpts, radius=2, color=(0, 0, 255)):
     return out
 
 
-def plot_matches(image0,
+def plot_matches(img_name,
+                 image0,
                  image1,
                  kpts0,
                  kpts1,
                  matches,
+                 match_point_write_dir,
                  radius=1,
                  color=(0, 255, 0)):
     out0 = plot_keypoints(image0, kpts0, radius, color)
@@ -82,6 +84,17 @@ def plot_matches(image0,
     mkpts1 = np.round(mkpts1).astype(int)
 
     points_out = out.copy()
+    i = 0
+    test_image_name = ['1614044935217943_L.png','1614044895123555_L.png','1614045104206922_L.png']
+    is_write = False
+    if match_point_write_dir and img_name in test_image_name:
+        is_write = True
+        # 测试的图片
+        match_point_root_dir = os.path.join(match_point_write_dir, f"top{args.top_k}_nms{args.radius}")
+        match_point_path = os.path.join(match_point_root_dir,img_name.split('.')[0])
+        if not os.path.exists(match_point_path):
+            os.makedirs(match_point_path)
+
     for kpt0, kpt1 in zip(mkpts0, mkpts1):
         (x0, y0), (x1, y1) = kpt0, kpt1
         mcolor = (
@@ -93,6 +106,15 @@ def plot_matches(image0,
                  color=mcolor,
                  thickness=1,
                  lineType=cv2.LINE_AA)
+        if is_write:
+            point_match = points_out.copy()
+            cv2.line(point_match, (x0, y0), (x1 + W0, y1),
+                     color=mcolor,
+                     thickness=2,
+                     lineType=cv2.LINE_AA)
+            cv2.imwrite(os.path.join(match_point_path,f"{i}_{img_name}"),point_match)
+            i += 1
+
 
     cv2.putText(out, str(len(mkpts0)),
                 (out.shape[1] - 150, out.shape[0] - 50),
@@ -120,6 +142,7 @@ if __name__ == '__main__':
     parser.add_argument('--radius', type=int, default=2,
                         help='The radius of non-maximum suppression (default: 2).')
     parser.add_argument('--write_dir', type=str, default='',help='Image save directory.')
+    parser.add_argument('--match_point_write_dir', type=str, default='',help='Image match point save directory.')
     parser.add_argument('--version', type=str, default='',help='version')
     args = parser.parse_args()
 
@@ -142,14 +165,12 @@ if __name__ == '__main__':
     os.makedirs(test_model_save_path, exist_ok=True) # 模型保存路径
     output_model_path = os.path.join(test_model_save_path,f"{os.path.basename(model_path).split('.')[0]}.pth")
 
-    # if model_path.endswith('.ckpt'): # 如果是ckpt并且模型不存在，则转换
-    #     if not os.path.exists(output_model_path):
-    # main(model_path,output_model_path,args.device)
-    # print("模型转换成功!")
-    # model_path = output_model_path
-    model_path = "/media/xin/work1/github_pro/ALIKE/ALIKE_code/training/log_train/train/local_test_new/pth_path/epoch=29-mean_metric=0.2223.pth"
-    # elif model_path == 'default': # 如果是默认，则自动加载开源模型
-    #     model_path = model_path_default[args.model]
+    if model_path.endswith('.ckpt'): # 如果是ckpt并且模型不存在，则转换
+        if not os.path.exists(output_model_path):
+            main(model_path,output_model_path,args.device)
+            print("模型转换成功!")
+    elif model_path == 'default': # 如果是默认，则自动加载开源模型
+        model_path = model_path_default[args.model]
 
     model = ALike(**configs[args.model],
                   model_path=model_path,
@@ -164,15 +185,10 @@ if __name__ == '__main__':
 
     image_loader2 = ImageLoader(args.input2)
 
-    # img_ref = image_loader[0]
-    # img_rgb = cv2.cvtColor(img_ref, cv2.COLOR_BGR2RGB)
-    # pred_ref = model.run(img_rgb)
-    # kpts_ref = pred_ref['keypoints']
-    # desc_ref = pred_ref['descriptors']
     sum_net_t = []
     sum_net_matches_t = []
     sum_total_t = []  # 初始化时间列表
-    for i in range(0,len(image_loader)):
+    for i in range(2500,len(image_loader)):
         start = time.time()
         img,img_name = image_loader[i]
         img2,img2_name = image_loader2[i]
@@ -194,7 +210,8 @@ if __name__ == '__main__':
             continue
         end2 = time.time()
         status = f"matches/keypoints: {len(matches)}/{len(kpts)}"
-        vis_img,points_out = plot_matches(img, img2, kpts,kpts_ref, matches)
+        img_name = os.path.basename(img_name)
+        vis_img,points_out = plot_matches(img_name,img, img2, kpts,kpts_ref, matches, args.match_point_write_dir)
         cv2.namedWindow(args.model)
         cv2.setWindowTitle(args.model, args.model + ': ' + status)
         cv2.putText(vis_img, "Press 'q' or 'ESC' to stop.", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2,
@@ -214,8 +231,8 @@ if __name__ == '__main__':
             sum_net_t.append(net_t)
             sum_net_matches_t.append(net_matches_t)
             sum_total_t.append(total_t)
-        save_img_path = args.write_dir
-        if save_img_path:  # 匹配的图像文件保存
+        if args.write_dir:  # 匹配的图像文件保存
+            save_img_path = os.path.join(args.write_dir,f"top{args.top_k}_nms{args.radius}")
             img_name = os.path.basename(img_name)
             os.makedirs(save_img_path, exist_ok=True)
             out_file1 = os.path.join(save_img_path, "t" + img_name)
@@ -236,7 +253,7 @@ if __name__ == '__main__':
         if c == ord('q') or c == 27:
             break
 
-        if i == 1100 or i ==110 or i == 4700:
+        if i == 2100 or i ==2600 or i == 4700:
             break
     # 计算平均帧率
     avg_net_FPS = np.mean(sum_net_t[1:len(sum_net_t)-1])
