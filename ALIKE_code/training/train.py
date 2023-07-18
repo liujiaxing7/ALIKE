@@ -50,7 +50,6 @@ class CustomModelCheckpoint(ModelCheckpoint):
 
 
 
-
 class RebuildDatasetCallback(Callback):
     def __init__(self):
         pass
@@ -165,7 +164,7 @@ if __name__ == '__main__':
                          logger=logger, # 日志
                          reload_dataloaders_every_epoch=config['solver']['reload_dataloaders_every_epoch'], # 每一轮是否重新载入数据
                          callbacks=[
-                             ModelCheckpoint(monitor='val_metrics/mean',
+                             CustomModelCheckpoint(monitor='val_metrics/mean',
                                              save_top_k=-1, # 保存前n个最好的模型
                                              mode='max',
                                              save_last=True,
@@ -175,7 +174,7 @@ if __name__ == '__main__':
                                              ),
                              LearningRateMonitor(logging_interval='step'),
                              RebuildDatasetCallback(),
-                             CustomModelCheckpoint()
+                             # CustomModelCheckpoint()
                          ]
                          )
     trainer.fit(model, train_dataloaders=train_loader,val_dataloaders=val_dataloaders)
