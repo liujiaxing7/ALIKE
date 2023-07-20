@@ -125,27 +125,28 @@ def post_deal(flg,W,H,scores_map, descriptor_map,radius=2,top_k=2000, scores_th=
 
 def pre_deal_np(img,flg=False):
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img_rgb = cv2.resize(img_rgb, (640, 384))
     image = img_rgb.transpose(2, 0, 1)[None] / 255.0
     b, c, h, w = image.shape
-    h_ = math.ceil(h / 32) * 32 if h % 32 != 0 else h
-    w_ = math.ceil(w / 32) * 32 if w % 32 != 0 else w
-    if h_ != h:
-        h_padding = np.zeros((b, c, h_ - h, w))
-        image = np.concatenate([image, h_padding], dtype=np.float32,axis=2)
-    if w_ != w:
-        w_padding = np.zeros((b, c, h_, w_ - w))
-        image = np.concatenate([image, w_padding], dtype=np.float32,axis=3)
-    if h_ != h or w_ != w:
-        flg = True
-    return image,flg,h,w
+    # h_ = math.ceil(h / 32) * 32 if h % 32 != 0 else h
+    # w_ = math.ceil(w / 32) * 32 if w % 32 != 0 else w
+    # if h_ != h:
+    #     h_padding = np.zeros((b, c, h_ - h, w))
+    #     image = np.concatenate([image, h_padding], dtype=np.float32,axis=2)
+    # if w_ != w:
+    #     w_padding = np.zeros((b, c, h_, w_ - w))
+    #     image = np.concatenate([image, w_padding], dtype=np.float32,axis=3)
+    # if h_ != h or w_ != w:
+    #     flg = True
+    return image.astype("float32"),flg,h,w
 
 def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-x))
 
 def main(model_file):
     # 读取图片
-    path1 = '/media/xin/work1/github_pro/ALIKE/test_img/parker/L/1614045104206922_L.png'
-    path2 = '/media/xin/work1/github_pro/ALIKE/test_img/parker/R/1614045104206922_R.png'
+    path1 = './images/cam0/1614045104206922_L.png'
+    path2 = './images/cam1/1614045104206922_R.png'
     img1 = cv2.imread(path1)
     img2 = cv2.imread(path2)
     img_rgb1,flg1,H1,W1 = pre_deal_np(img1)
@@ -154,14 +155,17 @@ def main(model_file):
     start = time.time()
     model = ONNXModel(model_file)
     print("时间：",time.time()-start)
-    result1 = model.forward(img_rgb1)[0]
-    descriptor_map1 = torch.from_numpy(result1[:, :-1, :H1, :W1])
-    scores_map1 = torch.sigmoid(torch.from_numpy(result1[:, -1, :H1, :W1])).unsqueeze(1)
-    output1 = post_deal(flg1,W1,H1,scores_map1, descriptor_map1)
-    result2 = model.forward(img_rgb2)[0]
-    descriptor_map2  = torch.from_numpy(result2[:, :-1, :H2, :W2])
-    scores_map2 = torch.sigmoid(torch.from_numpy(result2[:, -1, :H2, :W2])).unsqueeze(1)
-    output2 = post_deal(flg2,W2,H2,scores_map2, descriptor_map2)
+
+    result1 = model.forward(img_rgb1)
+    descriptor_map1 = torch.from_numpy(result1[1][:, :, :H1, :W1])
+    scores_map1 = torch.from_numpy(result1[0][:, :, :H1, :W1])
+    output1 = post_deal(flg1, W1, H1, scores_map1, descriptor_map1)
+
+    result2 = model.forward(img_rgb2)
+    descriptor_map2 = torch.from_numpy(result2[1][:, :, :H2, :W2])
+    scores_map2 = torch.from_numpy(result2[0][:, :, :H2, :W2])
+    output2 = post_deal(flg2, W2, H2, scores_map2, descriptor_map2)
+
     kpts = output1['keypoints']
     desc = output1['descriptors']
     kpts_ref = output2['keypoints']
@@ -178,6 +182,6 @@ def main(model_file):
 
 
 if __name__ == '__main__':
-    model_file = '/media/xin/work1/github_pro/ALIKE/onnx_export_no_dkd/alinet-n.onnx'
+    model_file = './alile-n.onnx'
     check_model(model_file)
     main(model_file)
